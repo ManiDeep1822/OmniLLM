@@ -7,45 +7,48 @@ interface ChainVisualizerProps {
 }
 
 export const ChainVisualizer: React.FC<ChainVisualizerProps> = ({ events }) => {
-  // Extract chain steps from events
   const chainEvents = events.filter(e => e.type === 'chain_step');
   const lastEvent = events[0];
   const isCurrentlyChaining = lastEvent?.type === 'chain_step' || (lastEvent?.type === 'token' && lastEvent.model === 'chain');
 
   return (
-    <div className="bg-slate-800 rounded-lg p-4 shadow-xl border border-slate-700">
-      <div className="flex items-center gap-2 mb-4">
-        <Network size={18} className="text-pink-400" />
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300">Chain Visualizer</h2>
+    <div className="glass-card rounded-2xl p-6 transition-all h-full flex flex-col">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 bg-pink-500/10 text-pink-400 rounded-lg">
+          <Network size={20} />
+        </div>
+        <h2 className="text-sm font-black uppercase tracking-tight">Chain Visualizer</h2>
       </div>
 
-      <div className="flex items-center justify-start gap-4 overflow-x-auto py-6 px-2 min-h-[120px]">
+      <div className="flex items-center justify-start gap-4 overflow-x-auto py-8 px-2 min-h-[140px] custom-scrollbar">
         {chainEvents.reverse().map((event, index) => (
           <React.Fragment key={index}>
             <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className={`min-w-[120px] p-3 rounded-lg border-2 flex flex-col items-center gap-2 ${
+              initial={{ scale: 0.8, opacity: 0, x: -20 }}
+              animate={{ scale: 1, opacity: 1, x: 0 }}
+              className={`min-w-[140px] p-4 rounded-xl border-2 flex flex-col items-center gap-3 transition-all ${
                 index === chainEvents.length - 1 && isCurrentlyChaining 
-                    ? 'border-claude bg-claude/10 shadow-[0_0_15px_-5px_#3b82f6]' 
-                    : 'border-slate-600 bg-slate-900/50'
+                    ? 'border-primary bg-primary/10 shadow-[0_0_20px_-5px_#6c3dd3]' 
+                    : 'border-slate-700/50 bg-slate-950/40'
               }`}
             >
-              <div className="text-[10px] text-slate-500 font-bold">STEP {event.data.step}</div>
-              <div className="text-xs text-center truncate w-full text-slate-300">{event.data.prompt.substring(0, 20)}...</div>
+              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">STEP {event.data.step}</div>
+              <div className="text-xs text-center truncate w-full font-bold text-slate-200">{event.data.prompt}</div>
               {index === chainEvents.length - 1 && isCurrentlyChaining ? (
-                <Loader2 size={16} className="text-claude animate-spin mt-1" />
+                <Loader2 size={16} className="text-primary animate-spin" />
               ) : (
-                <CheckCircle2 size={16} className="text-emerald-500 mt-1" />
+                <CheckCircle2 size={16} className="text-emerald-400" />
               )}
             </motion.div>
             {index < chainEvents.length - 1 && (
-              <ArrowRight size={16} className="text-slate-600 shrink-0" />
+              <ArrowRight size={16} className="text-slate-700 shrink-0" />
             )}
           </React.Fragment>
         ))}
         {chainEvents.length === 0 && (
-          <div className="w-full text-center text-slate-500 italic text-sm">No active chaining sequence.</div>
+          <div className="w-full h-full flex items-center justify-center text-slate-500 italic text-xs font-medium">
+            No active multi-step reasoning sequence.
+          </div>
         )}
       </div>
     </div>

@@ -2,6 +2,7 @@
 .env.local
 .gemini/
 mcp_config.json
+mcp_server_config.json
 dist/
 node_modules/
 prisma/dev.db
@@ -10,3 +11,4 @@ dashboard-ui/dist/
 dashboard-ui/node_modules/
 *.key
 *secret*
+llm-test.ts
