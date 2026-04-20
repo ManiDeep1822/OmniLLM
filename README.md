@@ -19,7 +19,10 @@
 
 **OmniLLM** is a production-grade [Model Context Protocol](https://modelcontextprotocol.io/) server that connects the Google Antigravity IDE (and any MCP-compatible client) to elite LLM providers including Anthropic Claude, OpenAI GPT-4o, and Google Gemini.
 
-It features a robust multi-model routing system, persistent context chaining via SQLite, and a glassmorphic real-time monitoring dashboard with live token streaming.
+It features a robust multi-model routing system, persistent context chaining via SQLite, and a high-fidelity glassmorphic dashboard with live token streaming and custom-tuned ergonomics.
+
+> [!TIP]
+> **Working with Agents?** Check out [AGENTS.md](AGENTS.md) for optimized operation patterns and model selection strategies for autonomous agents like Antigravity.
 
 ---
 
@@ -48,7 +51,7 @@ npx prisma migrate dev --name init && npm run dev:all
 | ⚡ **Real-time Streaming** | Full token-by-token streaming to the dashboard and IDE |
 | 🚦 **Auto-Router** | Dynamically selects the best model based on task complexity |
 | ⛓️ **Context Chaining** | Persistent multi-turn memory backed by SQLite |
-| 📊 **Live Dashboard** | Glassmorphic Vite/React UI with real-time Socket.IO feeds |
+| 📊 **Premium Dashboard** | Glassmorphic Vite/React UI with custom-tuned scrollbars and real-time feeds |
 | 🤖 **Multi-Step Chains** | Sequential reasoning with automated context passing |
 | ⚖️ **Model Comparison** | Benchmarks responses from all three providers simultaneously |
 | 💰 **Cost Tracking** | Per-request token counting and cost estimation |
