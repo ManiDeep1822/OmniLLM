@@ -1,9 +1,12 @@
 .env
 .env.local
+.gemini/
+mcp_config.json
 dist/
 node_modules/
 prisma/dev.db
 prisma/dev.db-journal
-*.js.map
 dashboard-ui/dist/
 dashboard-ui/node_modules/
+*.key
+*secret*
