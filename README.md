@@ -1,43 +1,92 @@
 # OmniLLM Gateway 🚀
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div align="center">
 
-**OmniLLM** is a production-grade MCP (Model Context Protocol) server designed to connect the Google Antigravity IDE (and other MCP-compatible clients) to elite LLM providers like Anthropic, OpenAI, and Google. It features a robust multi-model routing system, persistent context chaining, and a real-time monitoring dashboard.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green?logo=node.js)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-black?logo=socket.io)](https://socket.io/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.x-2D3748?logo=prisma)](https://www.prisma.io/)
+
+**A production-grade MCP Gateway connecting Google Antigravity to Claude, GPT-4o, and Gemini — with a real-time monitoring dashboard.**
+
+</div>
+
+---
+
+## 🎯 Overview
+
+**OmniLLM** is a production-grade [Model Context Protocol](https://modelcontextprotocol.io/) server that connects the Google Antigravity IDE (and any MCP-compatible client) to elite LLM providers including Anthropic Claude, OpenAI GPT-4o, and Google Gemini.
+
+It features a robust multi-model routing system, persistent context chaining via SQLite, and a glassmorphic real-time monitoring dashboard with live token streaming.
+
+---
+
+## ⚡ Quick Start (3 Commands)
+
+```bash
+# 1. Clone and install
+git clone https://github.com/ManiDeep1822/OmniLLM.git
+cd OmniLLM && npm install && cd dashboard-ui && npm install && cd ..
+
+# 2. Configure environment
+cp .env.example .env   # Add your API keys to .env
+
+# 3. Initialize DB and launch everything
+npx prisma migrate dev --name init && npm run dev:all
+```
+
+> Starts the MCP server on port `3000` and the dashboard on port `5173` simultaneously.
+
+---
 
 ## 🌟 Features
 
-- ⚡ **Real-time Streaming**: Full support for real-time token streaming to the dashboard and IDE.
-- 🚦 **Auto-Router**: Dynamically selects the best model based on task complexity (Claude for reasoning, Gemini for coding).
-- ⛓️ **Context Chaining**: Maintains state and memory across multiple turns using a local database.
-- 📊 **Monitoring Dashboard**: A Vite-based frontend to visualize live LLM requests and responses.
-- 🛠️ **Multi-Step Chains**: Execute complex, sequential reasoning tasks with automated context passing.
-- ⚖️ **Model Comparison**: Benchmarking tools to compare responses from different providers simultaneously.
+| Feature | Description |
+|---|---|
+| ⚡ **Real-time Streaming** | Full token-by-token streaming to the dashboard and IDE |
+| 🚦 **Auto-Router** | Dynamically selects the best model based on task complexity |
+| ⛓️ **Context Chaining** | Persistent multi-turn memory backed by SQLite |
+| 📊 **Live Dashboard** | Glassmorphic Vite/React UI with real-time Socket.IO feeds |
+| 🤖 **Multi-Step Chains** | Sequential reasoning with automated context passing |
+| ⚖️ **Model Comparison** | Benchmarks responses from all three providers simultaneously |
+| 💰 **Cost Tracking** | Per-request token counting and cost estimation |
+| 🏥 **Provider Health** | Real-time latency and uptime monitoring per provider |
+
+---
 
 ## 🏗️ Architecture
 
-```text
-+-----------------------+          +-----------------------+
-|                       |          |                       |
-|  Google Antigravity   | <------> |    OmniLLM Gateway    |
-|         IDE           |   MCP    |      (Node.js)        |
-|                       |          |           +-----------+
-+-----------------------+          +-----+-----+           |
-                                         |     |     +-----+-------+
-                                         |     |     |   Database  |
-      +----------------------+           |     |     |  (SQLite)   |
-      |                      | <---------+     |     +-------------+
-      |    Live Dashboard    |      Socket.io  |
-      |   (localhost:5173)   |                 |     +-------------+
-      +----------------------+                 +---> | API Providers |
-                                                     | (Claude/GPT)  |
-                                                     +-------------+
+```mermaid
+graph TD
+    A["🧑‍💻 Developer / Antigravity IDE"] -->|MCP Protocol / stdio| B
+
+    subgraph Gateway ["OmniLLM Gateway (Node.js :3000)"]
+        B["MCP Server\n(Tools: stream-generate,\nauto-router, etc.)"]
+        B --> C["Auto-Router\n(Task complexity analysis)"]
+        C --> D["Streaming Engine\n(Token emitter)"]
+        D --> E["DB Logger\n(Prisma/SQLite)"]
+        D --> F["Socket.IO Emitter"]
+    end
+
+    C -->|API calls| G["☁️ Anthropic Claude"]
+    C -->|API calls| H["☁️ OpenAI GPT-4o"]
+    C -->|API calls| I["☁️ Google Gemini"]
+
+    F -->|WebSocket| J["📊 Dashboard\n(React/Vite :5173)"]
+    E -->|REST API| J
 ```
+
+---
 
 ## 📋 Prerequisites
 
-- **Node.js**: Version 18.0.0 or higher
-- **IDE**: Google Antigravity or any client supporting MCP
-- **API Keys**: Anthropic, OpenAI, and Google Gemini keys
+- **Node.js** 18.0.0 or higher
+- **IDE**: Google Antigravity or any MCP-compatible client
+- **API Keys**: Anthropic, OpenAI, and Google Gemini
+
+---
 
 ## ⚙️ Installation
 
@@ -47,7 +96,7 @@
    cd OmniLLM
    ```
 
-2. **Install dependencies**:
+2. **Install all dependencies**:
    ```bash
    npm install
    cd dashboard-ui && npm install && cd ..
@@ -56,7 +105,7 @@
 3. **Configure Environment**:
    ```bash
    cp .env.example .env
-   # Add your API keys to the .env file
+   # Edit .env and add your API keys
    ```
 
 4. **Initialize Database**:
@@ -64,14 +113,16 @@
    npx prisma migrate dev --name init
    ```
 
-5. **Build the project**:
+5. **Build the MCP server**:
    ```bash
    npm run build
    ```
 
+---
+
 ## 🔧 Antigravity Configuration
 
-Update your `mcp_config.json` (usually located in `.gemini/antigravity/mcp_config.json`) to include the OmniLLM server:
+Update your `mcp_config.json` (located at `C:\Users\<you>\.gemini\antigravity\mcp_config.json`):
 
 ```json
 {
@@ -90,30 +141,88 @@ Update your `mcp_config.json` (usually located in `.gemini/antigravity/mcp_confi
 }
 ```
 
+---
+
 ## 🛠️ Available MCP Tools
 
-- `stream-generate`: Standard text generation with real-time streaming.
-- `multi-step-chain`: Executes a sequence of prompts where each output becomes context for the next.
-- `auto-router`: Automatically selects the best model based on the task description.
-- `model-comparison`: Compares responses from Claude, GPT-4o, and Gemini for the same prompt.
-- `context-chain`: Maintains context across multiple turns using database-backed memory.
+| Tool | Description |
+|---|---|
+| `stream-generate` | Standard text generation with real-time token streaming |
+| `auto-router` | Dynamically selects the best provider/model for the task |
+| `multi-step-chain` | Executes sequential prompts with context passing between steps |
+| `model-comparison` | Generates responses from Claude, GPT-4o, and Gemini in parallel |
+| `context-chain` | Maintains persistent conversation memory across sessions |
+
+---
 
 ## 📊 Dashboard
 
-The monitoring dashboard provides a live feed of all transactions through the gateway.
-- **URL**: `http://localhost:5173`
-- **Dashboard API**: `http://localhost:3000`
+The monitoring dashboard provides live visibility into all gateway traffic.
 
-Run it with:
+| Endpoint | URL |
+|---|---|
+| Dashboard UI | `http://localhost:5173` |
+| Gateway REST API | `http://localhost:3000` |
+| Health Check | `http://localhost:3000/api/health` |
+| Call History | `http://localhost:3000/api/history` |
+| Provider Health | `http://localhost:3000/api/providers/health` |
+| Usage Analytics | `http://localhost:3000/api/analytics` |
+
+**Run the dashboard:**
 ```bash
-cd dashboard-ui
-npm run dev
+# Both MCP server + dashboard (recommended)
+npm run dev:all
+
+# Dashboard only
+npm run ui:dev
 ```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Real-time token streaming via Socket.IO
+- [x] Auto-router for dynamic model selection
+- [x] Multi-step reasoning chains
+- [x] Cost estimation and token counting
+- [x] Provider health monitoring
+- [x] Live dashboard with glassmorphic UI
+- [ ] Ollama / local model support
+- [ ] JWT-based authentication for the dashboard
+- [ ] Prompt caching layer (Redis)
+- [ ] Webhook support for stream completions
+- [ ] Docker & Docker Compose setup
+- [ ] Rate limiting and quota management per provider
+
+---
+
+## 🔧 Troubleshooting
+
+| Problem | Likely Cause | Fix |
+|---|---|---|
+| `Cannot connect to MCP server` | Server not built or wrong path in mcp_config | Run `npm run build` and verify the absolute path in `args` |
+| Dashboard shows "OFFLINE" | MCP server not running on port 3000 | Run `npm run dev` in the project root |
+| `API key invalid` error | Missing or wrong key in `.env` | Double-check your `.env` file against `.env.example` |
+| `Prisma error: table not found` | Database not initialized | Run `npx prisma migrate dev --name init` |
+| Port 5173 already in use | Another Vite instance is running | Kill it with `npx kill-port 5173` or Vite will auto-increment |
+| Port 3000 already in use | Another process on port 3000 | Change `PORT=3001` in `.env` and update the dashboard API URL |
+| Live feed shows no data | Socket.IO connection blocked | Ensure browser allows `ws://127.0.0.1:3000` WebSocket connections |
+| Build fails with TS errors | Type mismatch | Run `npm run build 2>&1` to see the full error list |
+
+---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to get started.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on our development workflow, code style, and pull request process.
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/ManiDeep1822">Indla Mohana Venkata Mani Deep</a> — Powered by the Google Antigravity platform</sub>
+</div>

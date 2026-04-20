@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "ui:dev": "npm run dev --prefix dashboard-ui"
+    "ui:dev": "npm run dev --prefix dashboard-ui",
+    "dev:all": "concurrently \"npm run dev\" \"npm run ui:dev\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
@@ -29,6 +30,7 @@
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
+    "concurrently": "^9.2.1",
     "jest": "^30.3.0",
     "prisma": "^5.20.0",
     "ts-jest": "^29.4.9",
