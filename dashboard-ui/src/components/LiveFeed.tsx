@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Terminal, Clock, Trash2, Database, Zap, MousePointer2 as Cursor } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MCPEvent } from '../hooks/useSocket';
+import type { MCPEvent } from '../types/dashboard';
 
 interface StreamSession {
   id: string;
@@ -62,6 +62,32 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
         }
         return prev;
       });
+    } else if (event.type === 'error') {
+      setSessions((prev) => {
+        const current = prev[0];
+        const errorMessage = event.error || 'Unknown error occurred during stream';
+        
+        if (current && !current.isComplete) {
+          // Failure during active stream
+          const updated = { 
+            ...current, 
+            text: current.text + `\n\n[ERROR: ${errorMessage}]`,
+            isComplete: true 
+          };
+          return [updated, ...prev.slice(1)];
+        } else {
+          // Failure before stream even started
+          const newSession: StreamSession = {
+            id: Math.random().toString(36).substr(2, 9),
+            provider: event.provider || 'Gateway',
+            model: event.model || 'Error',
+            text: `System Error: ${errorMessage}`,
+            isComplete: true,
+            timestamp: new Date(),
+          };
+          return [newSession, ...prev].slice(0, 5);
+        }
+      });
     }
   }, [events]);
 
@@ -94,15 +120,29 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
           </div>
         </div>
         
-        {sessions.length > 0 && (
+        <div className="flex items-center gap-2">
           <button 
-            onClick={clearAll}
-            className="p-1.5 hover:bg-red-500/10 rounded-md transition-all group border border-transparent hover:border-red-500/20"
-            title="Clear all streams"
+            onClick={async () => {
+              try { await fetch('http://localhost:3000/api/test-stream', { method: 'POST' }); }
+              catch(e) { console.error('Failed to trigger test stream'); }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-[8px] transition-all"
+            title="Trigger a simulated real-time stream"
           >
-            <Trash2 size={16} className="text-slate-500 group-hover:text-red-400" />
+            <Zap size={14} />
+            <span className="text-[11px] font-semibold">Test Stream</span>
           </button>
-        )}
+          
+          {sessions.length > 0 && (
+            <button 
+              onClick={clearAll}
+              className="p-1.5 hover:bg-red-500/10 rounded-md transition-all group border border-transparent hover:border-red-500/20"
+              title="Clear all streams"
+            >
+              <Trash2 size={16} className="text-slate-500 group-hover:text-red-400" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
@@ -117,12 +157,16 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
               className={`relative overflow-hidden bg-slate-950/40 rounded-xl border-2 transition-all p-4 ${
                 !session.isComplete 
                   ? 'border-blue-500/40 shadow-[0_0_20px_-5px_var(--tw-shadow-color)] shadow-blue-500/20 animate-in' 
-                  : 'border-slate-800'
+                  : session.text.includes('[ERROR:') || session.model === 'Error'
+                    ? 'border-red-500/40 shadow-[0_0_20px_-5px_var(--tw-shadow-color)] shadow-red-500/10'
+                    : 'border-slate-800'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded text-white ${getProviderColor(session.provider)}`}>
+                  <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded text-white ${
+                    session.model === 'Error' ? 'bg-red-500' : getProviderColor(session.provider)
+                  }`}>
                     {session.provider}
                   </span>
                   <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">{session.model}</span>
@@ -135,7 +179,11 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
                 </div>
               </div>
 
-              <div className="max-h-[150px] overflow-y-auto pr-2 font-mono text-sm leading-relaxed text-slate-200 bg-slate-950/20 p-2 rounded-lg border border-slate-800/50">
+              <div className={`max-h-[150px] overflow-y-auto pr-2 font-mono text-sm leading-relaxed p-2 rounded-lg border ${
+                session.model === 'Error' || session.text.includes('[ERROR:')
+                  ? 'text-red-300 bg-red-950/20 border-red-900/30'
+                  : 'text-slate-200 bg-slate-950/20 border-slate-800/50'
+              }`}>
                 {session.text}
                 {!session.isComplete && <span className="inline-block w-2 h-4 bg-blue-400 ml-1 animate-pulse rounded-sm align-middle" />}
               </div>

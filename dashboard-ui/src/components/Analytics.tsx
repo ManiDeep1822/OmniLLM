@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { PieChart as PieIcon, BarChart3 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import axios from 'axios';
-
-interface AnalyticsData {
-  date: string;
-  cost: number;
-  tokens: number;
-}
+import type { AnalyticsData } from '../types/dashboard';
 
 export const Analytics: React.FC = () => {
   const [range, setRange] = useState<'daily' | 'weekly' | 'monthly'>('daily');
@@ -27,30 +21,32 @@ export const Analytics: React.FC = () => {
   }, [range]);
 
   const pieData = [
-    { name: 'Claude', value: data.length > 0 ? 400 : 0, color: '#6C3DD3' },
-    { name: 'GPT-4o', value: data.length > 0 ? 300 : 0, color: '#10B981' },
-    { name: 'Gemini', value: data.length > 0 ? 200 : 0, color: '#3B82F6' },
+    { name: 'Claude', value: data.length > 0 ? 400 : 0, color: '#8b5cf6' },
+    { name: 'GPT-4o', value: data.length > 0 ? 300 : 0, color: '#10b981' },
+    { name: 'Gemini', value: data.length > 0 ? 200 : 0, color: '#3b82f6' },
   ];
 
   return (
-    <div className="grid grid-cols-12 gap-8">
-      {/* Cost Trends */}
-      <div className="col-span-12 xl:col-span-8 glass-card rounded-2xl p-6 transition-all">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-lg">
-              <BarChart3 size={20} />
+    <div className="grid grid-cols-12 gap-5">
+      {/* Bar Chart */}
+      <div className="col-span-12 xl:col-span-8 glass-card rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 flex items-center justify-center rounded-[10px] bg-indigo-500/10">
+              <BarChart3 size={17} className="text-indigo-500" />
             </div>
-            <h2 className="text-sm font-black uppercase tracking-tight">Usage Trends</h2>
+            <h2 className="heading-lg">Usage Trends</h2>
           </div>
 
-          <div className="flex bg-slate-950/20 p-1 rounded-xl border border-slate-700/30">
-            {['daily', 'weekly', 'monthly'].map((r) => (
+          <div className="flex p-0.5 rounded-[10px] bg-[var(--input-bg)] border border-[var(--border-color)]">
+            {(['daily', 'weekly', 'monthly'] as const).map((r) => (
               <button
                 key={r}
-                onClick={() => setRange(r as any)}
-                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                  range === r ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'
+                onClick={() => setRange(r)}
+                className={`px-3.5 py-1.5 rounded-[8px] text-[11px] font-semibold capitalize transition-all ${
+                  range === r
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {r}
@@ -59,95 +55,100 @@ export const Analytics: React.FC = () => {
           </div>
         </div>
 
-        <div className="h-[300px] w-full">
+        <div className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
+            <BarChart data={data} barCategoryGap="20%">
               <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6C3DD3" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#6C3DD3" stopOpacity={0.3} />
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.25} />
                 </linearGradient>
               </defs>
-              <XAxis 
-                dataKey="date" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                dy={10}
+              <XAxis
+                dataKey="date"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: 'var(--text-tertiary)', fontSize: 11, fontWeight: 500 }}
+                dy={8}
               />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: 'var(--text-tertiary)', fontSize: 11, fontWeight: 500 }}
+                width={40}
               />
-              <Tooltip 
-                cursor={{ fill: 'rgba(108, 61, 211, 0.05)' }}
-                contentStyle={{ 
-                  backgroundColor: '#0F0F1A', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
+              <Tooltip
+                cursor={{ fill: 'var(--surface-hover)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
                   fontSize: '12px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)'
+                  fontWeight: 500,
+                  boxShadow: 'var(--shadow-glass)',
+                  padding: '8px 12px',
                 }}
               />
-              <Bar 
-                dataKey="cost" 
-                fill="url(#barGradient)" 
-                radius={[6, 6, 0, 0]}
-                barSize={32}
-              />
+              <Bar dataKey="cost" fill="url(#barGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Provider Distribution */}
-      <div className="col-span-12 xl:col-span-4 glass-card rounded-2xl p-6 transition-all flex flex-col">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-2 bg-pink-500/10 text-pink-400 rounded-lg">
-            <PieIcon size={20} />
+      {/* Pie Chart */}
+      <div className="col-span-12 xl:col-span-4 glass-card rounded-2xl p-6 flex flex-col">
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="w-9 h-9 flex items-center justify-center rounded-[10px] bg-pink-500/10">
+            <PieIcon size={17} className="text-pink-500" />
           </div>
-          <h2 className="text-sm font-black uppercase tracking-tight">Provider Distribution</h2>
+          <h2 className="heading-lg">Provider Split</h2>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center relative">
-          <div className="h-[200px] w-full">
+          <div className="h-[180px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={8}
+                  innerRadius={55}
+                  outerRadius={75}
+                  paddingAngle={6}
                   dataKey="value"
+                  stroke="none"
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '10px',
+                    fontSize: '11px',
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          
+
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-            <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Active</span>
-            <span className="block text-xl font-black text-slate-100 italic">Traffic</span>
+            <span className="block text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Active</span>
+            <span className="block text-lg font-bold text-[var(--text-primary)]">Traffic</span>
           </div>
 
-          <div className="w-full mt-6 space-y-3">
-             {pieData.map((item, idx) => (
-               <div key={idx} className="flex items-center justify-between group cursor-default">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{item.name}</span>
-                  </div>
-                  <span className="text-xs font-mono font-black text-slate-200 opacity-60 group-hover:opacity-100 transition-opacity">
-                    {data.length > 0 ? (item.value / 9).toFixed(1) : 0}%
-                  </span>
-               </div>
-             ))}
+          <div className="w-full mt-5 space-y-2.5">
+            {pieData.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between group cursor-default">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-[12px] font-medium text-[var(--text-secondary)]">{item.name}</span>
+                </div>
+                <span className="mono text-[12px] text-[var(--text-primary)] opacity-60 group-hover:opacity-100 transition-opacity">
+                  {data.length > 0 ? (item.value / 9).toFixed(1) : 0}%
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

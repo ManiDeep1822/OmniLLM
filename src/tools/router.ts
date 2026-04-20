@@ -22,10 +22,21 @@ export const autoRouterTool = {
                   provider === 'openai' ? 'GPT4O' : 'GEMINI_PRO';
     }
 
-    const response = await handleStreamingRequest(args.task, provider, { modelKey });
+    try {
+      const response = await handleStreamingRequest(args.task, provider, { modelKey });
 
-    return {
-      content: [{ type: 'text', text: `[Routed to ${modelKey}]\n\n${response}` }]
-    };
+      return {
+        content: [{ type: 'text', text: `[Routed to ${modelKey}]\n\n${response}` }]
+      };
+    } catch (error: any) {
+      console.error('MCP Tool Error (auto-router):', error.message);
+      return {
+        content: [{ 
+          type: 'text', 
+          text: `Router failed: ${error.message}` 
+        }],
+        isError: true
+      };
+    }
   }
 };

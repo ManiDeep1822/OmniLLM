@@ -1,7 +1,7 @@
 import React from 'react';
 import { Network, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { MCPEvent } from '../hooks/useSocket';
+import type { MCPEvent } from '../types/dashboard';
 
 interface ChainVisualizerProps {
   events: MCPEvent[];

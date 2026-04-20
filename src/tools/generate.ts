@@ -11,13 +11,24 @@ export const streamGenerateTool = {
     modelKey: z.string().optional().describe('Optional model key (e.g., CLAUDE, GPT4O, GEMINI_PRO)')
   },
   handler: async (args: any) => {
-    const text = await handleStreamingRequest(args.prompt, args.modelProvider, {
-      systemPrompt: args.systemPrompt,
-      modelKey: args.modelKey
-    });
+    try {
+      const text = await handleStreamingRequest(args.prompt, args.modelProvider, {
+        systemPrompt: args.systemPrompt,
+        modelKey: args.modelKey
+      });
 
-    return {
-      content: [{ type: 'text', text }]
-    };
+      return {
+        content: [{ type: 'text', text }]
+      };
+    } catch (error: any) {
+      console.error('MCP Tool Error (stream-generate):', error.message);
+      return {
+        content: [{ 
+          type: 'text', 
+          text: `Error: ${error.message}. Please check gateway logs or configuration.` 
+        }],
+        isError: true
+      };
+    }
   }
 };

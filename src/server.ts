@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { tools } from './tools/index.js';
 import { initSocket, getIO } from './dashboard/socket.js';
 import { getHistory, prisma } from './db/logger.js';
+import { writeFileSync } from 'fs';
 
 const mcpServer = new McpServer({
   name: 'llm-gateway',
@@ -34,6 +35,81 @@ app.get('/api/history', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.get('/api/config', (req, res) => {
+  const keys = [
+    { key: 'GEMINI_API_KEY', label: 'Google Gemini', set: !!(config.GEMINI_API_KEY && config.GEMINI_API_KEY.trim()) },
+    { key: 'CLAUDE_API_KEY', label: 'Anthropic Claude', set: !!(config.CLAUDE_API_KEY && config.CLAUDE_API_KEY.trim()) },
+    { key: 'OPENAI_API_KEY', label: 'OpenAI GPT-4o', set: !!(config.OPENAI_API_KEY && config.OPENAI_API_KEY.trim()) },
+    { key: 'DATABASE_URL', label: 'Database', set: !!(process.env.DATABASE_URL && process.env.DATABASE_URL.trim()) },
+    { key: 'PORT', label: 'Server Port', set: true, value: config.PORT },
+  ];
+  res.json({ keys  });
+});
+
+app.post('/api/test-error', async (req, res) => {
+  const { emitToDashboard } = await import('./dashboard/socket.js');
+  emitToDashboard('stream_error', {
+    provider: 'Google',
+    model: 'gemini-1.5-pro',
+    error: 'API Key Expired. Please update your .env file.',
+    timestamp: new Date().toISOString()
+  });
+  res.json({ status: 'error_emitted' });
+});
+
+app.post('/api/test-stream', async (req, res) => {
+  // Simulate a real-time streaming LLM response
+  const providers = ['Anthropic', 'OpenAI', 'Google'];
+  const provider = providers[Math.floor(Math.random() * providers.length)];
+  const models: Record<string, string> = { 'Anthropic': 'claude-3-5-sonnet', 'OpenAI': 'gpt-4o', 'Google': 'gemini-1.5-pro' };
+  
+  const text = "This is a simulated real-time stream. The Auto-Router has dynamically selected the optimal provider for this request. Neural networks are processing the tokens and returning them through the WebSocket connection to your dashboard. This proves the pipeline is fully operational!";
+  const words = text.split(' ');
+  
+  res.status(200).json({ status: 'streaming_started' });
+  
+  for (let i = 0; i < words.length; i++) {
+    await new Promise(r => setTimeout(r, 60 + Math.random() * 40));
+    const { emitToDashboard } = await import('./dashboard/socket.js');
+    emitToDashboard('token', {
+      provider: provider,
+      model: models[provider],
+      text: words[i] + ' ',
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  await new Promise(r => setTimeout(r, 100));
+  const { emitToDashboard } = await import('./dashboard/socket.js');
+  
+  emitToDashboard('stream_complete', {
+    provider: provider,
+    model: models[provider],
+    tokenCount: words.length + 5,
+    latencyMs: words.length * 80 + 200,
+    timestamp: new Date().toISOString()
+  });
+
+  // Log mock to DB so it shows up in history too
+  try {
+    const { logCall } = await import('./db/logger.js');
+    await logCall({
+      modelProvider: provider,
+      modelName: models[provider],
+      prompt: "Simulate a live stream",
+      response: text,
+      tokenCount: words.length + 5,
+      costEstimate: 0.0012,
+      latencyMs: words.length * 80 + 200,
+      isStreamed: true,
+      status: 'success'
+    });
+  } catch (e) {
+    console.error("Failed to log mock stream:", e);
+  }
+});
+
 
 app.get('/api/stats', async (req, res) => {
   try {
@@ -139,27 +215,49 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.get('/api/port', (req, res) => {
+  const address = httpServer.address();
+  res.json({ port: address && typeof address !== 'string' ? address.port : 3000 });
+});
+
 const httpServer = createServer(app);
 initSocket(httpServer);
 
+async function findFreePort(startPort: number): Promise<number> {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.listen(startPort, () => {
+      const port = (server.address() as any).port;
+      server.close(() => resolve(port));
+    });
+    server.on('error', () => resolve(findFreePort(startPort + 1)));
+  });
+}
+
 const start = async () => {
   try {
-    const port = parseInt(config.PORT);
-    httpServer.listen(port, '0.0.0.0', () => {
-      console.error(`Dashboard API and Socket.IO server running on port ${port}`);
+    const actualPort = await findFreePort(3000);
+    
+    // Explicitly write the discovered port
+    writeFileSync('.dashboard-port', String(actualPort));
+    console.error(`Dashboard running on port ${actualPort}`);
+
+    await new Promise((resolve) => {
+      httpServer.listen(actualPort, '0.0.0.0', () => {
+        resolve(true);
+      });
     });
-    httpServer.on('error', (err) => {
-      console.error('HTTP Server error:', err);
-    });
+
+    // Always start the MCP transport
     const transport = new StdioServerTransport();
     mcpServer.connect(transport).catch(err => {
-      console.error('MCP Server connection failed:', err);
+      console.error('MCP connection error:', err);
     });
-    console.error('MCP Server initialized on Stdio');
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('Critical failure during startup:', error);
     process.exit(1);
   }
 };
 
 start();
+

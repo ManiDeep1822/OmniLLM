@@ -18,46 +18,73 @@ export const handleStreamingRequest = async (
 
   console.error(`Starting stream for ${providerName} using ${modelInfo.id}`);
 
-  await provider.stream(prompt, (chunk) => {
-    if (chunk.text) {
-      buffer.addToken(chunk.text);
-      emitToDashboard('token', {
-        provider: providerName,
-        text: chunk.text,
-        timestamp: new Date().toISOString()
-      });
-    }
+  try {
+    await provider.stream(prompt, (chunk) => {
+      if (chunk.text) {
+        buffer.addToken(chunk.text);
+        emitToDashboard('token', {
+          provider: providerName,
+          model: modelInfo.id,
+          text: chunk.text,
+          timestamp: new Date().toISOString()
+        });
+      }
 
-    if (chunk.isFinished) {
-      const metrics = buffer.getMetrics(
-        modelInfo.inputCost,
-        modelInfo.outputCost,
-        chunk.usage?.promptTokens || 0
-      );
+      if (chunk.isFinished) {
+        const metrics = buffer.getMetrics(
+          modelInfo.inputCost,
+          modelInfo.outputCost,
+          chunk.usage?.promptTokens || 0
+        );
 
-      console.error(`Stream complete. Tokens: ${metrics.totalTokens}, Cost: ${metrics.cost}`);
+        console.error(`Stream complete. Tokens: ${metrics.totalTokens}, Cost: ${metrics.cost}`);
 
-      emitToDashboard('stream_complete', {
-        provider: providerName,
-        metrics,
-        fullText: buffer.getFullText(),
-        timestamp: new Date().toISOString()
-      });
+        emitToDashboard('stream_complete', {
+          provider: providerName,
+          model: modelInfo.id,
+          tokenCount: metrics.totalTokens,
+          latencyMs: Date.now() - startTime,
+          timestamp: new Date().toISOString()
+        });
 
-      // Log to DB
-      logCall({
-        modelProvider: providerName,
-        modelName: modelInfo.id,
-        prompt,
-        response: buffer.getFullText(),
-        tokenCount: metrics.totalTokens,
-        costEstimate: metrics.cost,
-        latencyMs: Date.now() - startTime,
-        isStreamed: true,
-        status: 'success'
-      });
-    }
-  }, options);
+        // Log to DB
+        logCall({
+          modelProvider: providerName,
+          modelName: modelInfo.id,
+          prompt,
+          response: buffer.getFullText(),
+          tokenCount: metrics.totalTokens,
+          costEstimate: metrics.cost,
+          latencyMs: Date.now() - startTime,
+          isStreamed: true,
+          status: 'success'
+        });
+      }
+    }, options);
+  } catch (error: any) {
+    console.error(`Stream error for ${providerName}:`, error.message);
+    
+    emitToDashboard('stream_error', {
+      provider: providerName,
+      model: modelInfo.id,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+
+    logCall({
+      modelProvider: providerName,
+      modelName: modelInfo.id,
+      prompt,
+      response: `Error: ${error.message}`,
+      tokenCount: 0,
+      costEstimate: 0,
+      latencyMs: Date.now() - startTime,
+      isStreamed: true,
+      status: 'failed'
+    });
+
+    throw error;
+  }
 
   return buffer.getFullText();
 };

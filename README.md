@@ -54,29 +54,53 @@ npx prisma migrate dev --name init && npm run dev:all
 | 💰 **Cost Tracking** | Per-request token counting and cost estimation |
 | 🏥 **Provider Health** | Real-time latency and uptime monitoring per provider |
 
----
-
 ## 🏗️ Architecture
 
 ```mermaid
 graph TD
-    A["🧑‍💻 Developer / Antigravity IDE"] -->|MCP Protocol / stdio| B
-
-    subgraph Gateway ["OmniLLM Gateway (Node.js :3000)"]
-        B["MCP Server\n(Tools: stream-generate,\nauto-router, etc.)"]
-        B --> C["Auto-Router\n(Task complexity analysis)"]
-        C --> D["Streaming Engine\n(Token emitter)"]
-        D --> E["DB Logger\n(Prisma/SQLite)"]
-        D --> F["Socket.IO Emitter"]
+    subgraph Client
+        IDE[Google Antigravity IDE]
     end
 
-    C -->|API calls| G["☁️ Anthropic Claude"]
-    C -->|API calls| H["☁️ OpenAI GPT-4o"]
-    C -->|API calls| I["☁️ Google Gemini"]
+    subgraph "OmniLLM Gateway"
+        Server[Express Server & Socket.IO]
+        MCP[MCP SDK Transport]
+        DB[(Prisma/SQLite)]
+    end
 
-    F -->|WebSocket| J["📊 Dashboard\n(React/Vite :5173)"]
-    E -->|REST API| J
+    subgraph "AI Providers"
+        Claude[Anthropic Claude]
+        GPT[OpenAI GPT-4]
+        Gemini[Google Gemini]
+    end
+
+    subgraph Monitoring
+        Dash[Vite Dashboard]
+    end
+
+    IDE <==>|MCP Stdio| MCP
+    MCP <--> Server
+    Server <--> DB
+    Server <--> Claude
+    Server <--> GPT
+    Server <--> Gemini
+    Server <==>|Socket.IO| Dash
+    Server <-->|Health API| Dash
 ```
+
+## 🎥 Demo
+
+![Dashboard Preview](assets/dashboard.png)
+
+Experience real-time token streaming and automated context chaining directly in your browser while your IDE manages the logic.
+
+## 🚀 Quick Start
+
+Fastest way to get up and running:
+
+1. **Install & Setup**: `npm install && npx prisma migrate dev --name init`
+2. **Environment**: `cp .env.example .env` (Add your API keys)
+3. **Launch All**: `npm run dev:all`
 
 ---
 
@@ -170,44 +194,35 @@ The monitoring dashboard provides live visibility into all gateway traffic.
 
 **Run the dashboard:**
 ```bash
-# Both MCP server + dashboard (recommended)
-npm run dev:all
-
-# Dashboard only
-npm run ui:dev
+cd dashboard-ui
+npm run dev
 ```
 
----
+## 🛠️ Tech Stack
+
+- **Backend**: Node.js, TypeScript, Express, Socket.IO, Prisma, SQLite
+- **Frontend**: React, Vite, Tailwind CSS, Framer Motion, Recharts
+- **MCP**: Model Context Protocol SDK
 
 ## 🗺️ Roadmap
 
-- [x] Real-time token streaming via Socket.IO
-- [x] Auto-router for dynamic model selection
-- [x] Multi-step reasoning chains
-- [x] Cost estimation and token counting
-- [x] Provider health monitoring
-- [x] Live dashboard with glassmorphic UI
-- [ ] Ollama / local model support
-- [ ] JWT-based authentication for the dashboard
-- [ ] Prompt caching layer (Redis)
-- [ ] Webhook support for stream completions
-- [ ] Docker & Docker Compose setup
-- [ ] Rate limiting and quota management per provider
+- [ ] **Local LLMs**: Add support for Ollama and LocalAI.
+- [ ] **Security**: Add authentication and JWT protection to the dashboard.
+- [ ] **Observability**: Add cost budget alerts and rate limiting per provider.
+- [ ] **Models**: Native support for Claude 3.5 Sonnet and GPT-4o.
+- [ ] **Deployment**: Docker support for one-click deployment.
 
 ---
 
-## 🔧 Troubleshooting
+## 🛡️ Troubleshooting
 
-| Problem | Likely Cause | Fix |
-|---|---|---|
-| `Cannot connect to MCP server` | Server not built or wrong path in mcp_config | Run `npm run build` and verify the absolute path in `args` |
-| Dashboard shows "OFFLINE" | MCP server not running on port 3000 | Run `npm run dev` in the project root |
-| `API key invalid` error | Missing or wrong key in `.env` | Double-check your `.env` file against `.env.example` |
-| `Prisma error: table not found` | Database not initialized | Run `npx prisma migrate dev --name init` |
-| Port 5173 already in use | Another Vite instance is running | Kill it with `npx kill-port 5173` or Vite will auto-increment |
-| Port 3000 already in use | Another process on port 3000 | Change `PORT=3001` in `.env` and update the dashboard API URL |
-| Live feed shows no data | Socket.IO connection blocked | Ensure browser allows `ws://127.0.0.1:3000` WebSocket connections |
-| Build fails with TS errors | Type mismatch | Run `npm run build 2>&1` to see the full error list |
+| Issue | Solution |
+| :--- | :--- |
+| **Tools not showing in IDE** | Ensure `dist/server.js` path in `mcp_config.json` uses forward slashes `/`. |
+| **`Failed to parse stream`** | Your Google API Key has expired. Get a new one from [AI Studio](https://aistudio.google.com/). |
+| **Port 3000 already in use** | Run `netstat -ano \| findstr :3000` and kill the process ID. |
+| **`EPERM` during migration** | Close any process using the database file (including the dashboard). |
+| **Dashboard shows no live data** | Ensure `npm run dev:all` is running; the dashboard relies on the Socket.IO server. |
 
 ---
 

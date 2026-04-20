@@ -13,37 +13,48 @@ export const multiStepChainTool = {
     sessionId: z.string().optional().describe('Optional session identifier')
   },
   handler: async (args: any) => {
-    const session = await createChainSession(args.sessionId);
-    const results: string[] = [];
-    let accumulatedContext = "";
+    try {
+      const session = await createChainSession(args.sessionId);
+      const results: string[] = [];
+      let accumulatedContext = "";
 
-    for (let i = 0; i < args.prompts.length; i++) {
-      const stepPrompt = args.prompts[i];
-      const fullPrompt = i === 0 ? stepPrompt : `Context: ${accumulatedContext}\n\nNext Task: ${stepPrompt}`;
-      
-      emitToDashboard('chain_step', {
-        type: EventType.CHAIN_STEP,
-        provider: args.modelProvider,
-        model: 'chain',
-        timestamp: new Date().toISOString(),
-        data: { step: i + 1, totalSteps: args.prompts.length, prompt: stepPrompt }
+      for (let i = 0; i < args.prompts.length; i++) {
+        const stepPrompt = args.prompts[i];
+        const fullPrompt = i === 0 ? stepPrompt : `Context: ${accumulatedContext}\n\nNext Task: ${stepPrompt}`;
+        
+        emitToDashboard('chain_step', {
+          type: EventType.CHAIN_STEP,
+          provider: args.modelProvider,
+          model: 'chain',
+          timestamp: new Date().toISOString(),
+          data: { step: i + 1, totalSteps: args.prompts.length, prompt: stepPrompt }
+        });
+
+        const response = await handleStreamingRequest(fullPrompt, args.modelProvider, {
+          chainId: session.id
+        });
+
+        results.push(response);
+        accumulatedContext += `\nStep ${i + 1}: ${response}\n`;
+      }
+
+      await updateChainSession(session.id, {
+        steps: results,
+        completedAt: new Date()
       });
 
-      const response = await handleStreamingRequest(fullPrompt, args.modelProvider, {
-        chainId: session.id
-      });
-
-      results.push(response);
-      accumulatedContext += `\nStep ${i + 1}: ${response}\n`;
+      return {
+        content: [{ type: 'text', text: results.join('\n\n--- Step Split ---\n\n') }]
+      };
+    } catch (error: any) {
+      console.error('MCP Tool Error (multi-step-chain):', error.message);
+      return {
+        content: [{ 
+          type: 'text', 
+          text: `Chain failed at an intermediate step: ${error.message}` 
+        }],
+        isError: true
+      };
     }
-
-    await updateChainSession(session.id, {
-      steps: results,
-      completedAt: new Date()
-    });
-
-    return {
-      content: [{ type: 'text', text: results.join('\n\n--- Step Split ---\n\n') }]
-    };
   }
 };

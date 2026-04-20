@@ -1,18 +1,6 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-
-export interface MCPEvent {
-  type: 'token' | 'complete' | 'chain_step';
-  text?: string;
-  provider?: string;
-  model?: string;
-  tokenCount?: number;
-  latencyMs?: number;
-  data?: {
-    step?: number;
-    prompt?: string;
-  };
-}
+import type { MCPEvent } from '../types/dashboard';
 
 export const useSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -20,30 +8,54 @@ export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const s = io('http://127.0.0.1:3000', {
-      transports: ['websocket'],
-      reconnectionAttempts: 5
-    });
+    let s: Socket | null = null;
 
-    s.on('connect', () => setIsConnected(true));
-    s.on('disconnect', () => setIsConnected(false));
+    async function findServerPort(): Promise<string> {
+      for (const port of [3000, 3001, 3002, 3003]) {
+        try {
+          const res = await fetch(`http://localhost:${port}/api/health`);
+          if (res.ok) return String(port);
+        } catch {}
+      }
+      return '3000';
+    }
 
-    s.on('token', (event: MCPEvent) => {
-      setEvents((prev) => [{ ...event, type: 'token' }, ...prev.slice(0, 99)]);
-    });
+    const startSocket = async () => {
+      const port = await findServerPort();
+      s = io(`http://localhost:${port}`, {
+        transports: ['websocket'],
+        reconnectionAttempts: 5
+      });
 
-    s.on('stream_complete', (event: MCPEvent) => {
-      setEvents((prev) => [{ ...event, type: 'complete' }, ...prev.slice(0, 99)]);
-    });
+      s.on('connect', () => setIsConnected(true));
+      s.on('disconnect', () => setIsConnected(false));
 
-    setSocket(s);
+      s.on('token', (event: MCPEvent) => {
+        setEvents((prev) => [{ ...event, type: 'token' }, ...prev.slice(0, 99)]);
+      });
+
+      s.on('stream_complete', (event: MCPEvent) => {
+        setEvents((prev) => [{ ...event, type: 'complete' }, ...prev.slice(0, 99)]);
+      });
+
+      s.on('stream_error', (event: MCPEvent) => {
+        setEvents((prev) => [{ ...event, type: 'error' }, ...prev.slice(0, 99)]);
+      });
+
+      setSocket(s);
+    };
+
+    startSocket();
 
     return () => {
-      s.off('connect');
-      s.off('disconnect');
-      s.off('token');
-      s.off('stream_complete');
-      s.disconnect();
+      if (s) {
+        s.off('connect');
+        s.off('disconnect');
+        s.off('token');
+        s.off('stream_complete');
+        s.off('stream_error');
+        s.disconnect();
+      }
     };
   }, []);
 

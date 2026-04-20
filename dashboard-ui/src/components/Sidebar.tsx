@@ -1,46 +1,63 @@
 import React from 'react';
 import { LayoutDashboard, History, PieChart, Settings, ShieldCheck } from 'lucide-react';
-import { useTheme } from '../context/useTheme';
 
-export const Sidebar: React.FC = () => {
-  const items = [
-    { icon: LayoutDashboard, label: 'Dashboard', active: true },
-    { icon: History, label: 'History', active: false },
-    { icon: PieChart, label: 'Analytics', active: false },
-    { icon: Settings, label: 'Settings', active: false },
+export type Page = 'dashboard' | 'history' | 'analytics' | 'settings';
+
+interface SidebarProps {
+  activePage: Page;
+  onNavigate: (page: Page) => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
+  const items: { icon: React.ElementType; label: string; page: Page }[] = [
+    { icon: LayoutDashboard, label: 'Dashboard', page: 'dashboard' },
+    { icon: History, label: 'History', page: 'history' },
+    { icon: PieChart, label: 'Analytics', page: 'analytics' },
+    { icon: Settings, label: 'Settings', page: 'settings' },
   ];
 
   return (
-    <div className="w-20 lg:w-64 flex flex-col glass-card border-r border-slate-700/50 h-screen sticky top-0 transition-all duration-300">
-      <div className="p-6 flex items-center gap-3">
-        <div className="p-2 bg-primary/20 rounded-xl border border-primary/50">
-          <ShieldCheck className="text-primary" size={24} />
+    <aside className="w-[72px] lg:w-60 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border-color)] h-screen sticky top-0 transition-all duration-200">
+      {/* Logo */}
+      <div className="h-16 flex items-center gap-2.5 px-5 border-b border-[var(--border-color)]">
+        <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-dark text-white shrink-0">
+          <ShieldCheck size={17} strokeWidth={2.5} />
         </div>
-        <span className="font-black text-xl tracking-tighter hidden lg:block uppercase">OmniLLM</span>
+        <span className="heading-lg text-[var(--text-primary)] hidden lg:block tracking-tight">OmniLLM</span>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-2">
-        {items.map((item) => (
-          <button
-            key={item.label}
-            className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all group ${
-              item.active 
-                ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                : 'hover:bg-primary/10 text-slate-500 hover:text-primary'
-            }`}
-          >
-            <item.icon size={20} className={item.active ? 'text-white' : 'group-hover:scale-110 transition-transform'} />
-            <span className="font-bold text-sm hidden lg:block">{item.label}</span>
-          </button>
-        ))}
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        <p className="label px-3 mb-2 hidden lg:block">Navigation</p>
+        {items.map((item) => {
+          const isActive = activePage === item.page;
+          return (
+            <button
+              key={item.label}
+              onClick={() => onNavigate(item.page)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] transition-all text-[13px] font-medium ${
+                isActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]'
+              }`}
+            >
+              <item.icon size={18} strokeWidth={isActive ? 2.2 : 1.8} className="shrink-0" />
+              <span className="hidden lg:block truncate">{item.label}</span>
+              {isActive && (
+                <div className="hidden lg:block ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+              )}
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="p-6 mt-auto">
-         <div className="hidden lg:block p-4 rounded-xl bg-primary/5 border border-primary/10">
-            <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Current Plan</p>
-            <p className="text-xs font-black uppercase text-primary">Enterprise Pro</p>
-         </div>
+      {/* Footer */}
+      <div className="p-3 border-t border-[var(--border-color)]">
+        <div className="hidden lg:flex flex-col gap-1 p-3 rounded-[10px] bg-[var(--input-bg)]">
+          <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Plan</span>
+          <span className="text-[12px] font-semibold text-primary">Enterprise Pro</span>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 };
