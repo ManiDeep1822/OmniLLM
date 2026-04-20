@@ -23,8 +23,10 @@ export const useSocket = () => {
     const startSocket = async () => {
       const port = await findServerPort();
       s = io(`http://localhost:${port}`, {
-        transports: ['websocket'],
-        reconnectionAttempts: 5
+        transports: ['websocket', 'polling'],
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        withCredentials: true
       });
 
       s.on('connect', () => setIsConnected(true));
