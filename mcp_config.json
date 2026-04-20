@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "llm-gateway": {
+      "command": "node",
+      "args": ["C:/Users/indla/OneDrive/Desktop/MCP/dist/server.js"],
+      "env": {
+        "CLAUDE_API_KEY": "sk-ant-your-real-key",
+        "OPENAI_API_KEY": "sk-your-real-key",
+        "GEMINI_API_KEY": "AIzaSyBTZeeI6Zf-DFIOMp5kO0o-HjbMcssrVh0"
+      }
+    }
+  }
+}

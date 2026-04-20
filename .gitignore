@@ -1,0 +1,9 @@
+.env
+.env.local
+dist/
+node_modules/
+prisma/dev.db
+prisma/dev.db-journal
+*.js.map
+dashboard-ui/dist/
+dashboard-ui/node_modules/

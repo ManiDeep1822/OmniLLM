@@ -1,0 +1,37 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model LLMCall {
+  id             String   @id @default(uuid())
+  timestamp      DateTime @default(now())
+  modelProvider  String
+  modelName      String
+  prompt         String
+  response       String
+  tokenCount     Int?
+  costEstimate   Float?
+  latencyMs      Int?
+  isStreamed     Boolean  @default(false)
+  isChained      Boolean  @default(false)
+  status         String   @default("success") // success, error, fallback
+  errorMessage   String?
+  chainId        String?
+  chain          ChainSession? @relation(fields: [chainId], references: [id])
+}
+
+model ChainSession {
+  id          String    @id @default(uuid())
+  sessionId   String?   @unique
+  steps       String    // JSON stringified steps
+  totalTokens Int       @default(0)
+  totalCost   Float     @default(0)
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  calls       LLMCall[]
+}
