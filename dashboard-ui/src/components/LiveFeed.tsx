@@ -103,7 +103,7 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
   };
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-5 flex flex-col h-full border border-slate-700/50 shadow-2xl">
+    <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-5 flex flex-col h-full border border-slate-700/50 shadow-2xl overflow-x-hidden">
       <div className="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-3">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${isConnected ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>

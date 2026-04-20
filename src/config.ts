@@ -15,9 +15,9 @@ const envSchema = z.object({
 export const config = envSchema.parse(process.env);
 
 export const GEMINI_MODELS = [
-  'gemini-2.5-flash',      // Primary
-  'gemini-2.0-flash',      // Fallback
-  'gemini-2.5-flash-lite' // Budget
+  'gemini-2.0-flash-lite',      // Primary
+  'gemini-2.0-flash-lite-lite',  // Fallback
+  'gemini-2.0-flash-lite-lite' // Budget
 ];
 
 export const MODELS = {

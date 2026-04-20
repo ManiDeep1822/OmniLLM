@@ -87,19 +87,21 @@ body {
 }
 
 /* ─── Custom Scrollbar ─── */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+::-webkit-scrollbar {
+  width: 4px;
+  height: 0px;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 100px;
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary);
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.4);
 }
+
 
 /* ─── Typography ─── */
 .heading-xl {
