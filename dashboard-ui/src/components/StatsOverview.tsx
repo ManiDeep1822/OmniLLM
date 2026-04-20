@@ -1,43 +1,104 @@
-import React from 'react';
-import { Database, DollarSign, Activity, Zap, TrendingUp, TrendingDown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Database, Zap, Activity, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import axios from 'axios';
 import { motion } from 'framer-motion';
 
+interface DashboardStats {
+  totalTokens: number;
+  totalCost: number;
+  avgLatency: number;
+  totalCalls: number;
+  activeSessions: number;
+}
+
 export const StatsOverview: React.FC = () => {
-  const stats = [
-    { label: 'Total Tokens', value: '1.2M', icon: Database, color: 'text-primary', bg: 'bg-primary/10', change: '+12%', up: true },
-    { label: 'Total Cost', value: '$254.32', icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10', change: '-2.4%', up: false },
-    { label: 'Requests Today', value: '4,281', icon: Activity, color: 'text-blue-400', bg: 'bg-blue-500/10', change: '+18.2%', up: true },
-    { label: 'Avg Latency', value: '124ms', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10', change: '-5ms', up: false },
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get<DashboardStats>('http://localhost:3000/api/stats');
+        setStats(res.data);
+      } catch (err) {
+        console.error('Failed to fetch stats', err);
+      }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTokens = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
+
+  const cards = [
+    { 
+      label: 'Total Tokens', 
+      value: stats ? formatTokens(stats.totalTokens) : '...', 
+      change: '+1.2%', 
+      icon: Database, 
+      color: 'text-emerald-400',
+      up: true 
+    },
+    { 
+      label: 'Est. Cost', 
+      value: stats ? `$${stats.totalCost.toFixed(2)}` : '...', 
+      change: '+0.4%', 
+      icon: DollarSign, 
+      color: 'text-blue-400',
+      up: true 
+    },
+    { 
+      label: 'Avg. Latency', 
+      value: stats ? `${stats.avgLatency}ms` : '...', 
+      change: '-12%', 
+      icon: Zap, 
+      color: 'text-yellow-400',
+      up: false 
+    },
+    { 
+      label: 'Active Sessions', 
+      value: stats ? stats.activeSessions.toString() : '...', 
+      change: 'Stable', 
+      icon: Activity, 
+      color: 'text-purple-400',
+      up: true 
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-      {stats.map((stat, i) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {cards.map((card, idx) => (
         <motion.div
-          key={stat.label}
+          key={idx}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.1 }}
-          className="glass-card p-6 rounded-2xl relative overflow-hidden group hover:scale-[1.02] transition-all"
+          transition={{ delay: idx * 0.1 }}
+          className="glass-card rounded-2xl p-6 relative overflow-hidden group transition-all hover:scale-[1.02]"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-              <stat.icon size={20} />
+            <div className={`p-2 rounded-lg bg-slate-950/40 ${card.color}`}>
+              <card.icon size={20} />
             </div>
-            <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${
-              stat.up ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+            <div className={`flex items-center gap-1 text-[10px] font-black uppercase ${
+              card.label === 'Avg. Latency' ? (card.up ? 'text-red-400' : 'text-emerald-400') : (card.up ? 'text-emerald-400' : 'text-red-400')
             }`}>
-              {stat.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-              {stat.change}
+              {card.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              {card.change}
             </div>
           </div>
           
-          <div>
-            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">{stat.label}</p>
-            <h3 className="text-3xl font-black">{stat.value}</h3>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">{card.label}</span>
+            <span className="text-2xl font-black text-slate-100">{card.value}</span>
           </div>
-          
-          <div className={`absolute bottom-0 right-0 w-24 h-24 blur-3xl rounded-full translate-x-1/2 translate-y-1/2 transition-opacity ${stat.bg} opacity-20 group-hover:opacity-40`}></div>
+
+          <div className="absolute -bottom-4 -right-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+            <card.icon size={100} />
+          </div>
         </motion.div>
       ))}
     </div>

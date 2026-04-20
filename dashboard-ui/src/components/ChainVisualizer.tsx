@@ -1,9 +1,10 @@
 import React from 'react';
 import { Network, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { MCPEvent } from '../hooks/useSocket';
 
 interface ChainVisualizerProps {
-  events: any[];
+  events: MCPEvent[];
 }
 
 export const ChainVisualizer: React.FC<ChainVisualizerProps> = ({ events }) => {
@@ -32,8 +33,8 @@ export const ChainVisualizer: React.FC<ChainVisualizerProps> = ({ events }) => {
                     : 'border-slate-700/50 bg-slate-950/40'
               }`}
             >
-              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">STEP {event.data.step}</div>
-              <div className="text-xs text-center truncate w-full font-bold text-slate-200">{event.data.prompt}</div>
+              <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">STEP {event.data?.step}</div>
+              <div className="text-xs text-center truncate w-full font-bold text-slate-200">{event.data?.prompt}</div>
               {index === chainEvents.length - 1 && isCurrentlyChaining ? (
                 <Loader2 size={16} className="text-primary animate-spin" />
               ) : (

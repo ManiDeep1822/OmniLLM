@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Terminal, Clock, Trash2, Database, Zap, MousePointer2 as Cursor } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MCPEvent } from '../hooks/useSocket';
 
 interface StreamSession {
   id: string;
@@ -14,13 +15,13 @@ interface StreamSession {
 }
 
 interface LiveFeedProps {
-  events: any[];
+  events: MCPEvent[];
   isConnected: boolean;
 }
 
 export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
   const [sessions, setSessions] = useState<StreamSession[]>([]);
-  const lastProcessedRef = useRef<any>(null);
+  const lastProcessedRef = useRef<MCPEvent | null>(null);
 
   useEffect(() => {
     const event = events[0];
@@ -36,14 +37,14 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
             id: Math.random().toString(36).substr(2, 9),
             provider: event.provider || 'Unknown',
             model: event.model || 'Unknown',
-            text: event.text,
+            text: event.text || '',
             isComplete: false,
             timestamp: new Date(),
           };
           return [newSession, ...prev].slice(0, 5);
         } else {
           // Update current session
-          const updated = { ...current, text: current.text + event.text };
+          const updated = { ...current, text: current.text + (event.text || '') };
           return [updated, ...prev.slice(1)];
         }
       });

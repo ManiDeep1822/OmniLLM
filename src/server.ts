@@ -35,6 +35,94 @@ app.get('/api/history', async (req, res) => {
   }
 });
 
+app.get('/api/stats', async (req, res) => {
+  try {
+    const aggregates = await prisma.lLMCall.aggregate({
+      _sum: { tokenCount: true, costEstimate: true },
+      _avg: { latencyMs: true },
+      _count: { _all: true }
+    });
+
+    const activeSessions = await prisma.lLMCall.count({
+      where: { timestamp: { gte: new Date(Date.now() - 15 * 60 * 1000) } }
+    });
+
+    res.json({
+      totalTokens: aggregates._sum.tokenCount || 0,
+      totalCost: aggregates._sum.costEstimate || 0,
+      avgLatency: Math.round(aggregates._avg.latencyMs || 0),
+      totalCalls: aggregates._count._all,
+      activeSessions
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/providers/health', async (req, res) => {
+  try {
+    const providers = ['anthropic', 'openai', 'gemini'];
+    const healthData = await Promise.all(providers.map(async (p) => {
+      const lastCalls = await prisma.lLMCall.findMany({
+        where: { modelProvider: { contains: p } },
+        take: 10,
+        orderBy: { timestamp: 'desc' }
+      });
+
+      const successCount = lastCalls.filter(c => c.status === 'success').length;
+      const avgLatency = lastCalls.length > 0 
+        ? Math.round(lastCalls.reduce((acc, c) => acc + (c.latencyMs || 0), 0) / lastCalls.length)
+        : 0;
+
+      let status = 'healthy';
+      if (lastCalls.length > 0) {
+        if (successCount < 7) status = 'unhealthy';
+        else if (successCount < 9 || avgLatency > 5000) status = 'degraded';
+      }
+
+      return {
+        id: p,
+        name: p.charAt(0).toUpperCase() + p.slice(1),
+        status,
+        latency: avgLatency,
+        uptime: successCount * 10, // simplified uptime %
+        history: lastCalls.map(c => c.latencyMs || 0).reverse()
+      };
+    }));
+
+    res.json(healthData);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/analytics', async (req, res) => {
+  try {
+    const period = req.query.period as string || 'daily';
+    // Simplified: group by last 7 days for now
+    const now = new Date();
+    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const calls = await prisma.lLMCall.findMany({
+      where: { timestamp: { gte: past } },
+      orderBy: { timestamp: 'asc' }
+    });
+
+    // Group by day
+    const grouped = calls.reduce((acc: any, call) => {
+      const date = new Date(call.timestamp).toLocaleDateString();
+      if (!acc[date]) acc[date] = { date, cost: 0, tokens: 0 };
+      acc[date].cost += call.costEstimate || 0;
+      acc[date].tokens += call.tokenCount || 0;
+      return acc;
+    }, {});
+
+    res.json(Object.values(grouped));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/health', async (req, res) => {
   try {
     const io = getIO();

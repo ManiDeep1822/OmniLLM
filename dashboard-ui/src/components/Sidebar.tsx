@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, History, PieChart, Settings, ShieldCheck } from 'lucide-react';
+import { useTheme } from '../context/useTheme';
 
 export const Sidebar: React.FC = () => {
   const items = [

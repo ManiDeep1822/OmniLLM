@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sun, Moon, Search, Bell } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 
 interface NavbarProps {
   healthStatus: 'healthy' | 'unhealthy' | 'degraded';

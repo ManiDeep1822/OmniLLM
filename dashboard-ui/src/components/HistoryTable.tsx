@@ -3,8 +3,18 @@ import { History, Search, ChevronLeft, ChevronRight, Database, Zap, Clock } from
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface CallRecord {
+  id: string;
+  timestamp: string;
+  modelProvider: string;
+  modelName: string;
+  tokenCount: number;
+  latencyMs: number;
+  costEstimate: number;
+}
+
 export const HistoryTable: React.FC = () => {
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<CallRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const itemsPerPage = 8;
@@ -12,7 +22,7 @@ export const HistoryTable: React.FC = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/api/history');
+        const res = await axios.get<CallRecord[]>('http://localhost:3000/api/history');
         setHistory(res.data);
       } catch (err) {
         console.error('Failed to fetch history', err);
