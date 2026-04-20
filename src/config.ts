@@ -14,6 +14,12 @@ const envSchema = z.object({
 
 export const config = envSchema.parse(process.env);
 
+export const GEMINI_MODELS = [
+  'gemini-2.5-flash',      // Primary
+  'gemini-2.0-flash',      // Fallback
+  'gemini-2.5-flash-lite' // Budget
+];
+
 export const MODELS = {
   CLAUDE: {
     id: 'claude-3-5-sonnet-20240620',
@@ -34,13 +40,13 @@ export const MODELS = {
     outputCost: 0.6,
   },
   GEMINI_PRO: {
-    id: 'gemini-2.5-flash',
+    id: GEMINI_MODELS[0],
     provider: 'google',
     inputCost: 0.1,
     outputCost: 0.4,
   },
   GEMINI_FLASH: {
-    id: 'gemini-2.5-flash',
+    id: GEMINI_MODELS[0],
     provider: 'google',
     inputCost: 0.1,
     outputCost: 0.4,

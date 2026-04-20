@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { LLMProvider, StreamHandler, ProviderResponse } from './index.js';
-import { config, MODELS } from '../config.js';
+import { config, MODELS, GEMINI_MODELS } from '../config.js';
 
 export class GeminiProvider implements LLMProvider {
   name = 'Google Gemini';
@@ -10,52 +10,73 @@ export class GeminiProvider implements LLMProvider {
     this.genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY || '');
   }
 
+  private async withFallback<T>(fn: (modelId: string) => Promise<T>): Promise<T> {
+    let lastError: any;
+    for (const modelId of GEMINI_MODELS) {
+      try {
+        return await fn(modelId);
+      } catch (error: any) {
+        lastError = error;
+        const is503 = error.message?.includes('503') || error.message?.includes('Service Unavailable');
+        if (is503) {
+          console.error(`Gemini model ${modelId} failed with 503. Retrying with next fallback in 2s...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw lastError;
+  }
+
   async generate(prompt: string, options: any = {}): Promise<ProviderResponse> {
-    const model = this.genAI.getGenerativeModel({ 
-        model: options.model || MODELS.GEMINI_PRO.id,
-        systemInstruction: options.systemPrompt 
+    return this.withFallback(async (modelId) => {
+      const model = this.genAI.getGenerativeModel({ 
+          model: options.model || modelId,
+          systemInstruction: options.systemPrompt 
+      });
+      
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      
+      return {
+        content: response.text(),
+        usage: {
+          promptTokens: response.usageMetadata?.promptTokenCount || 0,
+          completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
+        },
+      };
     });
-    
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    
-    // Gemini doesn't always provide detailed token counts in the simple response object
-    // but we can try to estimate or get metadata if available
-    return {
-      content: response.text(),
-      usage: {
-        promptTokens: response.usageMetadata?.promptTokenCount || 0,
-        completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
-      },
-    };
   }
 
   async stream(prompt: string, handler: StreamHandler, options: any = {}): Promise<void> {
-    const model = this.genAI.getGenerativeModel({ 
-        model: options.model || MODELS.GEMINI_PRO.id,
-        systemInstruction: options.systemPrompt 
-    });
-    
-    const result = await model.generateContentStream(prompt);
+    return this.withFallback(async (modelId) => {
+      const model = this.genAI.getGenerativeModel({ 
+          model: options.model || modelId,
+          systemInstruction: options.systemPrompt 
+      });
+      
+      const result = await model.generateContentStream(prompt);
 
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      if (chunkText) {
-        handler({ text: chunkText, isFinished: false });
-      }
-    }
-
-    // Final usage info
-    const response = await result.response;
-    handler({
-        text: '',
-        isFinished: false,
-        usage: {
-            promptTokens: response.usageMetadata?.promptTokenCount || 0,
-            completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        if (chunkText) {
+          handler({ text: chunkText, isFinished: false });
         }
-    });
+      }
 
-    handler({ text: '', isFinished: true });
+      // Final usage info
+      const response = await result.response;
+      handler({
+          text: '',
+          isFinished: false,
+          usage: {
+              promptTokens: response.usageMetadata?.promptTokenCount || 0,
+              completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
+          }
+      });
+
+      handler({ text: '', isFinished: true });
+    });
   }
 }
