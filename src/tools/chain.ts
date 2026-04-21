@@ -12,7 +12,7 @@ export const multiStepChainTool = {
     modelProvider: z.enum(['anthropic', 'openai', 'google']).default('anthropic'),
     sessionId: z.string().optional().describe('Optional session identifier')
   },
-  handler: async (args: any) => {
+  handler: async function* (args: any) {
     try {
       const session = await createChainSession(args.sessionId);
       const results: string[] = [];
@@ -22,6 +22,13 @@ export const multiStepChainTool = {
         const stepPrompt = args.prompts[i];
         const fullPrompt = i === 0 ? stepPrompt : `Context: ${accumulatedContext}\n\nNext Task: ${stepPrompt}`;
         
+        emitToDashboard('chain_progress', {
+          step: i + 1,
+          total: args.prompts.length,
+          status: 'processing',
+          timestamp: new Date().toISOString()
+        });
+
         emitToDashboard('chain_step', {
           type: EventType.CHAIN_STEP,
           provider: args.modelProvider,
@@ -36,6 +43,12 @@ export const multiStepChainTool = {
 
         results.push(response);
         accumulatedContext += `\nStep ${i + 1}: ${response}\n`;
+
+        yield { 
+          step: i + 1, 
+          result: response, 
+          context: accumulatedContext 
+        };
       }
 
       await updateChainSession(session.id, {

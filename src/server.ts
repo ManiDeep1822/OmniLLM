@@ -16,6 +16,12 @@ const mcpServer = new McpServer({
   version: '1.0.0',
 });
 
+// Fix 4 - prevent early exit and handle signals
+process.stdin.resume();
+process.stdin.setEncoding('utf8');
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT', () => process.exit(0));
+
 for (const tool of tools) {
   mcpServer.tool(
     tool.name,
@@ -274,6 +280,10 @@ app.get('/api/port', (req, res) => {
 });
 
 const httpServer = createServer(app);
+// Fix 2 - Set a longer timeout for the HTTP server
+httpServer.timeout = 300000; // 5 minutes
+httpServer.keepAliveTimeout = 300000;
+
 initSocket(httpServer);
 
 async function findFreePort(startPort: number): Promise<number> {
@@ -293,7 +303,7 @@ writeFileSync('.dashboard-port', String(actualPort));
 console.error(`Dashboard running on port ${actualPort}`);
 
 httpServer.listen(actualPort, '0.0.0.0', () => {
-  console.log(`Server listening on port ${actualPort}`);
+  console.error(`Server listening on port ${actualPort}`);
   
   // Always start the MCP transport
   const transport = new StdioServerTransport();
