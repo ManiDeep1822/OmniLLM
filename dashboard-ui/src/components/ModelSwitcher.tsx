@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Check, Zap, Server, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Settings, Check, Zap, AlertCircle } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ModelInfo {
   provider: string;
@@ -8,7 +9,6 @@ interface ModelInfo {
 }
 
 interface ProviderConfig {
-  name: string;
   configured: boolean;
   models: string[];
 }
@@ -24,8 +24,8 @@ const ModelSwitcher: React.FC = () => {
   const { socket } = useSocket();
   const [data, setData] = useState<ModelsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [switching, setSwitching] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const fetchModels = async () => {
     try {
@@ -58,8 +58,20 @@ const ModelSwitcher: React.FC = () => {
     };
   }, [socket]);
 
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   const handleSwitch = async (provider: string, model: string) => {
-    setSwitching(model);
+    // Optimistic update
+    if (data) {
+       setData({ ...data, current: { provider, model } });
+    }
+    setToast(`Switched to ${model}`);
+
     try {
       const res = await fetch('/api/models/switch', {
         method: 'POST',
@@ -68,20 +80,18 @@ const ModelSwitcher: React.FC = () => {
       });
 
       if (!res.ok) throw new Error('Failed to switch model');
-      
-      // Success is handled by socket event, but we can optimistically update or just wait
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setSwitching(null);
+      // Rollback on error if needed, but usually socket will sync us back
+      fetchModels(); 
     }
   };
 
   if (loading) return (
-    <div className="glass-card p-6 animate-pulse">
+    <div className="glass-card p-6 animate-pulse border border-white/5">
       <div className="h-6 w-32 bg-white/10 rounded mb-4"></div>
       <div className="space-y-4">
-        {[1, 2, 3].map(i => <div key={i} className="h-20 bg-white/5 rounded"></div>)}
+        {[1, 2, 3].map(i => <div key={i} className="h-24 bg-white/5 rounded-xl"></div>)}
       </div>
     </div>
   );
@@ -89,96 +99,119 @@ const ModelSwitcher: React.FC = () => {
   if (!data) return null;
 
   const providers = [
-    { id: 'gemini', icon: <Zap size={18} className="text-blue-400" />, color: 'bg-blue-400' },
-    { id: 'claude', icon: <ShieldCheck size={18} className="text-purple-400" />, color: 'bg-purple-400' },
-    { id: 'openai', icon: <Server size={18} className="text-green-400" />, color: 'bg-green-400' }
+    { id: 'gemini', label: 'Google Gemini', dotColor: 'bg-blue-400', glowColor: 'rgba(96,165,250,0.5)' },
+    { id: 'claude', label: 'Anthropic Claude', dotColor: 'bg-purple-400', glowColor: 'rgba(192,132,252,0.5)' },
+    { id: 'openai', label: 'OpenAI', dotColor: 'bg-emerald-400', glowColor: 'rgba(52,211,153,0.5)' }
   ];
 
   return (
-    <div className="glass-card p-6 border border-white/10 relative overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[100px] rounded-full"></div>
-      
-      <div className="flex items-center gap-2 mb-6">
-        <Settings size={20} className="text-blue-400" />
-        <h2 className="text-lg font-semibold text-white/90">Model Configuration</h2>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-2 text-red-400 text-sm">
-          <AlertCircle size={16} />
-          {error}
+    <div className="relative">
+      <div className="glass-card p-6 border border-white/10 relative overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-8">
+          <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+            <Settings size={20} />
+          </div>
+          <h2 className="text-lg font-bold text-white/90">Model Configuration</h2>
         </div>
-      )}
 
-      <div className="space-y-4">
-        {providers.map((p) => {
-          const config = data.available[p.id];
-          if (!config) return null;
-          
-          const isActiveProvider = data.current.provider === p.id;
-          
-          return (
-            <div 
-              key={p.id} 
-              className={`p-4 rounded-xl transition-all duration-300 ${
-                isActiveProvider 
-                  ? 'bg-white/10 border border-white/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]' 
-                  : 'bg-white/5 border border-transparent hover:bg-white/8 hover:border-white/10'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${p.color} shadow-[0_0_8px_${p.color}80]`}></div>
-                  <span className="font-medium text-white/80">{config.name}</span>
-                  {!config.configured && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 border border-white/10 uppercase tracking-wider">
-                      No API Key
-                    </span>
-                  )}
-                  {isActiveProvider && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 uppercase tracking-wider flex items-center gap-1">
-                      <Check size={10} /> Active
-                    </span>
-                  )}
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-400 text-sm">
+            <AlertCircle size={18} />
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {providers.map((p) => {
+            const config = data.available[p.id];
+            if (!config) return null;
+            
+            const isConfigured = config.configured;
+
+            return (
+              <div 
+                key={p.id} 
+                className={`p-5 rounded-2xl border transition-all duration-300 ${
+                  isConfigured 
+                    ? 'bg-black/20 border-white/5 hover:border-white/10' 
+                    : 'bg-black/10 border-transparent opacity-60 grayscale cursor-not-allowed'
+                }`}
+              >
+                {/* Provider Info */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${p.dotColor} shadow-[0_0_10px_${p.glowColor}]`} />
+                    <span className="font-bold text-sm tracking-tight text-white/70 uppercase">{p.label}</span>
+                    {!isConfigured && (
+                      <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-white/5 text-white/30 border border-white/5 uppercase tracking-tighter ml-2">
+                        No API Key
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Model Pills Row */}
+                <div className="flex flex-wrap gap-2">
+                  {config.models.map(m => {
+                    const isActive = data.current.provider === p.id && data.current.model === m;
+                    
+                    return (
+                      <button
+                        key={m}
+                        disabled={!isConfigured}
+                        onClick={() => handleSwitch(p.id, m)}
+                        className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 ${
+                          isActive 
+                            ? 'bg-white/10 text-white border-2 border-transparent' 
+                            : 'bg-white/5 text-white/40 border border-white/5 hover:bg-white/8 hover:text-white/60'
+                        }`}
+                        style={isActive ? { 
+                          boxShadow: `0 0 15px -3px ${p.glowColor}`,
+                          borderColor: p.glowColor 
+                        } : {}}
+                      >
+                        {isActive && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', damping: 20 }}
+                          >
+                            <Check size={12} className="text-white" />
+                          </motion.div>
+                        )}
+                        <span className={isActive ? 'font-bold' : ''}>{m}</span>
+                        
+                        {/* Hover Highlight Effect */}
+                        {!isActive && isConfigured && (
+                          <div className="absolute inset-0 rounded-full bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-
-              {config.configured && (
-                <div className="flex gap-2">
-                  <select 
-                    className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/70 focus:outline-none focus:ring-1 focus:ring-blue-500/50 appearance-none"
-                    value={isActiveProvider ? data.current.model : config.models[0]}
-                    onChange={() => {
-                       // Optional: intermediate state
-                    }}
-
-                    id={`select-${p.id}`}
-                  >
-                    {config.models.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                  <button 
-                    onClick={() => {
-                        const select = document.getElementById(`select-${p.id}`) as HTMLSelectElement;
-                        handleSwitch(p.id, select.value);
-                    }}
-                    disabled={switching === p.id}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      isActiveProvider 
-                        ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:bg-blue-600' 
-                        : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-                    } disabled:opacity-50`}
-                  >
-                    {switching ? '...' : isActiveProvider ? 'Updated' : 'Switch'}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
+
+      {/* Instant Feedback Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-blue-500 rounded-2xl shadow-[0_10px_40px_-10px_rgba(59,130,246,0.5)] border border-blue-400/50 flex items-center gap-3 text-white font-bold text-sm"
+          >
+            <div className="p-1 bg-white/20 rounded-full">
+              <Zap size={14} fill="white" />
+            </div>
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

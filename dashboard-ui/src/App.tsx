@@ -11,7 +11,9 @@ import { HistoryTable } from './components/HistoryTable';
 import { AutoRouterCard } from './components/AutoRouterCard';
 import { ChainVisualizer } from './components/ChainVisualizer';
 import { SettingsPage } from './components/SettingsPage';
+import ModelSwitcher from './components/ModelSwitcher';
 import { useSocket } from './hooks/useSocket';
+
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PAGE_FADE = {
@@ -30,6 +32,10 @@ function DashboardView({ events, isConnected }: { events: any[]; isConnected: bo
       </div>
 
       <StatsOverview />
+
+      <div className="my-6">
+        <ModelSwitcher />
+      </div>
 
       <div className="grid grid-cols-12 gap-5">
         <div className="col-span-12 xl:col-span-8 h-[480px]">

@@ -15,16 +15,18 @@ const envSchema = z.object({
 export const config = envSchema.parse(process.env);
 
 export const GEMINI_MODELS = [
-  'gemini-2.0-flash-lite',      // Primary
-  'gemini-2.0-flash-lite-lite',  // Fallback
-  'gemini-2.0-flash-lite-lite' // Budget
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite'
 ];
+
 
 export const MODELS = {
   CLAUDE: {
-    id: 'claude-3-5-sonnet-20240620',
+    id: 'claude-3-5-sonnet-20241022',
     provider: 'anthropic',
-    inputCost: 3.0, // per 1M tokens
+    inputCost: 3.0, 
     outputCost: 15.0,
   },
   GPT4O: {
@@ -38,12 +40,6 @@ export const MODELS = {
     provider: 'openai',
     inputCost: 0.15,
     outputCost: 0.6,
-  },
-  GEMINI_PRO: {
-    id: GEMINI_MODELS[0],
-    provider: 'google',
-    inputCost: 0.1,
-    outputCost: 0.4,
   },
   GEMINI_FLASH: {
     id: GEMINI_MODELS[0],
@@ -73,19 +69,16 @@ export function setActiveModel(provider: string, model: string) {
 export function getAvailableModelsGrouped() {
   return {
     gemini: {
-       name: 'Google Gemini',
        configured: !!config.GEMINI_API_KEY?.trim(),
        models: GEMINI_MODELS
     },
     claude: {
-       name: 'Anthropic Claude',
        configured: !!config.CLAUDE_API_KEY?.trim(),
        models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307']
     },
     openai: {
-       name: 'OpenAI',
        configured: !!config.OPENAI_API_KEY?.trim(),
-       models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo']
+       models: ['gpt-4o', 'gpt-4o-mini']
     }
   };
 }

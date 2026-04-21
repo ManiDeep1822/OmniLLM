@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "ui:dev": "npm run dev --prefix dashboard-ui",
-    "dev:all": "concurrently \"npm run dev\" \"npm run ui:dev\""
+    "dev:all": "concurrently \"npm run dev\" \"wait-on http://localhost:3000/api/health && npm run ui:dev\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
@@ -36,6 +36,7 @@
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wait-on": "^9.0.5"
   }
 }

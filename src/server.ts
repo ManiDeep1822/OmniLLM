@@ -37,7 +37,35 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// --- MODEL SWITCHER ENDPOINTS ---
+app.get('/api/models', (req, res) => {
+  console.log('API: GET /api/models hit');
+  res.json({
+    current: getActiveModel(),
+    available: getAvailableModelsGrouped()
+  });
+});
+
+app.post('/api/models/switch', async (req, res) => {
+  console.log('API: POST /api/models/switch hit', req.body);
+  const { provider, model } = req.body;
+  if (!provider || !model) {
+    return res.status(400).json({ error: 'Provider and model are required' });
+  }
+
+  setActiveModel(provider, model);
+  
+  const { emitToDashboard } = await import('./dashboard/socket.js');
+  emitToDashboard('model_switched', { provider, model });
+
+  res.json({ 
+    success: true, 
+    active: getActiveModel() 
+  });
+});
+
 app.get('/api/history', async (req, res) => {
+
   try {
     const history = await getHistory(50);
     res.json(history);
@@ -196,30 +224,6 @@ app.get('/api/providers/available', (req, res) => {
   });
 });
 
-app.get('/api/models', (req, res) => {
-  res.json({
-    current: getActiveModel(),
-    available: getAvailableModelsGrouped()
-  });
-});
-
-app.post('/api/models/switch', async (req, res) => {
-  const { provider, model } = req.body;
-  if (!provider || !model) {
-    return res.status(400).json({ error: 'Provider and model are required' });
-  }
-
-  setActiveModel(provider, model);
-  
-  const { emitToDashboard } = await import('./dashboard/socket.js');
-  emitToDashboard('model_switched', { provider, model });
-
-  res.json({ 
-    success: true, 
-    active: getActiveModel() 
-  });
-});
-
 
 app.get('/api/analytics', async (req, res) => {
   try {
@@ -283,30 +287,19 @@ async function findFreePort(startPort: number): Promise<number> {
   });
 }
 
-const start = async () => {
-  try {
-    const actualPort = await findFreePort(3000);
-    
-    // Explicitly write the discovered port
-    writeFileSync('.dashboard-port', String(actualPort));
-    console.error(`Dashboard running on port ${actualPort}`);
 
-    await new Promise((resolve) => {
-      httpServer.listen(actualPort, '0.0.0.0', () => {
-        resolve(true);
-      });
-    });
+const actualPort = 3000;
+writeFileSync('.dashboard-port', String(actualPort));
+console.error(`Dashboard running on port ${actualPort}`);
 
-    // Always start the MCP transport
-    const transport = new StdioServerTransport();
-    mcpServer.connect(transport).catch(err => {
-      console.error('MCP connection error:', err);
-    });
-  } catch (error) {
-    console.error('Critical failure during startup:', error);
-    process.exit(1);
-  }
-};
+httpServer.listen(actualPort, '0.0.0.0', () => {
+  console.log(`Server listening on port ${actualPort}`);
+  
+  // Always start the MCP transport
+  const transport = new StdioServerTransport();
+  mcpServer.connect(transport).catch(err => {
+    console.error('MCP connection error:', err);
+  });
+});
 
-start();
 
