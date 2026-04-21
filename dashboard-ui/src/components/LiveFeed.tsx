@@ -21,7 +21,22 @@ interface LiveFeedProps {
 
 export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
   const [sessions, setSessions] = useState<StreamSession[]>([]);
+  const [activeModel, setActiveModel] = useState<{provider: string, model: string} | null>(null);
   const lastProcessedRef = useRef<MCPEvent | null>(null);
+
+  useEffect(() => {
+    const fetchActive = async () => {
+      try {
+        const res = await fetch('/api/models');
+        if (res.ok) {
+          const data = await res.json();
+          setActiveModel(data.current);
+        }
+      } catch {}
+    };
+    fetchActive();
+  }, []);
+
 
   useEffect(() => {
     const event = events[0];
@@ -88,8 +103,12 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
           return [newSession, ...prev].slice(0, 5);
         }
       });
+    } else if (event.type === 'model_switched') {
+      setActiveModel({ provider: event.provider || '', model: event.model || '' });
     }
   }, [events]);
+
+
 
   const clearAll = () => setSessions([]);
 
@@ -121,6 +140,14 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
         </div>
         
         <div className="flex items-center gap-2">
+          {activeModel && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-950/50 border border-slate-700/50 rounded-lg mr-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${getProviderColor(activeModel.provider)} shadow-[0_0_8px_rgba(255,255,255,0.2)]`}></div>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Active:</span>
+              <span className="text-[10px] font-mono text-slate-200">{activeModel.model}</span>
+            </div>
+          )}
+
           <button 
             onClick={async () => {
               try { await fetch('http://localhost:3000/api/test-stream', { method: 'POST' }); }

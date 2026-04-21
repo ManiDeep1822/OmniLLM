@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { LLMProvider, StreamHandler, ProviderResponse } from './index.js';
-import { config, MODELS, GEMINI_MODELS } from '../config.js';
+import { config, MODELS, GEMINI_MODELS, getActiveModel } from '../config.js';
 
 export class GeminiProvider implements LLMProvider {
   name = 'Google Gemini';
@@ -11,6 +11,17 @@ export class GeminiProvider implements LLMProvider {
   }
 
   private async withFallback<T>(fn: (modelId: string) => Promise<T>): Promise<T> {
+    const { activeProvider, activeModel } = getActiveModel();
+    
+    // If Gemini is active AND it's not the default fallback list, try the active model first
+    if (activeProvider === 'gemini') {
+      try {
+        return await fn(activeModel);
+      } catch (error) {
+        console.warn(`Selected Gemini model ${activeModel} failed, falling back to defaults...`);
+      }
+    }
+
     let lastError: any;
     for (const modelId of GEMINI_MODELS) {
       try {
@@ -28,6 +39,7 @@ export class GeminiProvider implements LLMProvider {
     }
     throw lastError;
   }
+
 
   async generate(prompt: string, options: any = {}): Promise<ProviderResponse> {
     return this.withFallback(async (modelId) => {

@@ -5,8 +5,10 @@ import {
   CheckCircle2, XCircle, Loader2
 } from 'lucide-react';
 import axios from 'axios';
+import ModelSwitcher from './ModelSwitcher';
 
 interface ConfigKey {
+
   key: string;
   label: string;
   set: boolean;
@@ -45,6 +47,11 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Real-time Model Switcher */}
+        <div className="xl:col-span-2">
+            <ModelSwitcher />
+        </div>
+
 
         {/* Appearance */}
         <div className="glass-card rounded-2xl p-6">

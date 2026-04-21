@@ -54,3 +54,39 @@ export const MODELS = {
 };
 
 export type ModelType = keyof typeof MODELS;
+
+// Runtime Configuration
+let runtimeConfig = {
+  activeProvider: 'gemini',
+  activeModel: GEMINI_MODELS[0]
+};
+
+export function getActiveModel() {
+  return runtimeConfig;
+}
+
+export function setActiveModel(provider: string, model: string) {
+  runtimeConfig.activeProvider = provider;
+  runtimeConfig.activeModel = model;
+}
+
+export function getAvailableModelsGrouped() {
+  return {
+    gemini: {
+       name: 'Google Gemini',
+       configured: !!config.GEMINI_API_KEY?.trim(),
+       models: GEMINI_MODELS
+    },
+    claude: {
+       name: 'Anthropic Claude',
+       configured: !!config.CLAUDE_API_KEY?.trim(),
+       models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307']
+    },
+    openai: {
+       name: 'OpenAI',
+       configured: !!config.OPENAI_API_KEY?.trim(),
+       models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo']
+    }
+  };
+}
+

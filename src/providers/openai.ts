@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { LLMProvider, StreamHandler, ProviderResponse } from './index.js';    
-import { config, MODELS } from '../config.js';
+import { config, MODELS, getActiveModel } from '../config.js';
 
 export class OpenAIProvider implements LLMProvider {
   name = 'OpenAI';
@@ -12,9 +12,16 @@ export class OpenAIProvider implements LLMProvider {
     });
   }
 
+  private resolveModel(options: any): string {
+    const { activeProvider, activeModel } = getActiveModel();
+    if (activeProvider === 'openai') return activeModel;
+    return options.model || MODELS.GPT4O.id;
+  }
+
   async generate(prompt: string, options: any = {}): Promise<ProviderResponse> {
     const response = await this.client.chat.completions.create({
-      model: options.model || MODELS.GPT4O.id,
+      model: this.resolveModel(options),
+
       messages: [
         ...(options.systemPrompt ? [{ role: 'system' as const, content: options.systemPrompt }] : []),
         { role: 'user' as const, content: prompt }
@@ -33,7 +40,8 @@ export class OpenAIProvider implements LLMProvider {
 
   async stream(prompt: string, handler: StreamHandler, options: any = {}): Promise<void> {
     const stream = await this.client.chat.completions.create({
-      model: options.model || MODELS.GPT4O.id,
+      model: this.resolveModel(options),
+
       messages: [
         ...(options.systemPrompt ? [{ role: 'system' as const, content: options.systemPrompt }] : []),
         { role: 'user' as const, content: prompt }

@@ -8,6 +8,7 @@ import { tools } from './tools/index.js';
 import { initSocket, getIO } from './dashboard/socket.js';
 import { getHistory, prisma } from './db/logger.js';
 import { getAvailableProviders } from './providers/index.js';
+import { getActiveModel, setActiveModel, getAvailableModelsGrouped } from './config.js';
 import { writeFileSync } from 'fs';
 
 const mcpServer = new McpServer({
@@ -194,6 +195,31 @@ app.get('/api/providers/available', (req, res) => {
     }
   });
 });
+
+app.get('/api/models', (req, res) => {
+  res.json({
+    current: getActiveModel(),
+    available: getAvailableModelsGrouped()
+  });
+});
+
+app.post('/api/models/switch', async (req, res) => {
+  const { provider, model } = req.body;
+  if (!provider || !model) {
+    return res.status(400).json({ error: 'Provider and model are required' });
+  }
+
+  setActiveModel(provider, model);
+  
+  const { emitToDashboard } = await import('./dashboard/socket.js');
+  emitToDashboard('model_switched', { provider, model });
+
+  res.json({ 
+    success: true, 
+    active: getActiveModel() 
+  });
+});
+
 
 app.get('/api/analytics', async (req, res) => {
   try {

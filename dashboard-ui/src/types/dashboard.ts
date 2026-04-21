@@ -4,7 +4,7 @@
  */
 
 export interface MCPEvent {
-  type: 'token' | 'complete' | 'chain_step' | 'error';
+  type: 'token' | 'complete' | 'chain_step' | 'error' | 'model_switched';
   text?: string;
   error?: string;
   provider?: string;

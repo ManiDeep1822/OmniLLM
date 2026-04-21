@@ -44,6 +44,11 @@ export const useSocket = () => {
         setEvents((prev) => [{ ...event, type: 'error' }, ...prev.slice(0, 99)]);
       });
 
+      s.on('model_switched', (event: any) => {
+        setEvents((prev) => [{ ...event, type: 'model_switched' }, ...prev.slice(0, 99)]);
+      });
+
+
       setSocket(s);
     };
 

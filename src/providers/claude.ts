@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { LLMProvider, StreamHandler, ProviderResponse } from './index.js';
-import { config, MODELS } from '../config.js';
+import { config, MODELS, getActiveModel } from '../config.js';
 
 export class ClaudeProvider implements LLMProvider {
   name = 'Anthropic Claude';
@@ -12,10 +12,17 @@ export class ClaudeProvider implements LLMProvider {
     });
   }
 
+  private resolveModel(options: any): string {
+    const { activeProvider, activeModel } = getActiveModel();
+    if (activeProvider === 'claude') return activeModel;
+    return options.model || MODELS.CLAUDE.id;
+  }
+
   async generate(prompt: string, options: any = {}): Promise<ProviderResponse> {
     const response = await this.client.messages.create({
-      model: options.model || MODELS.CLAUDE.id,
+      model: this.resolveModel(options),
       max_tokens: options.maxTokens || 4096,
+
       messages: [{ role: 'user', content: prompt }],
       system: options.systemPrompt,
     });
@@ -33,8 +40,9 @@ export class ClaudeProvider implements LLMProvider {
 
   async stream(prompt: string, handler: StreamHandler, options: any = {}): Promise<void> {
     const stream = await this.client.messages.create({
-      model: options.model || MODELS.CLAUDE.id,
+      model: this.resolveModel(options),
       max_tokens: options.maxTokens || 4096,
+
       messages: [{ role: 'user', content: prompt }],
       system: options.systemPrompt,
       stream: true,
