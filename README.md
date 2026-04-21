@@ -28,16 +28,30 @@ It features a robust multi-model routing system, persistent context chaining via
 
 ## ⚡ Quick Start (3 Commands)
 
+### Linux / macOS (Bash/Zsh)
 ```bash
 # 1. Clone and install
 git clone https://github.com/ManiDeep1822/OmniLLM.git
 cd OmniLLM && npm install && cd dashboard-ui && npm install && cd ..
 
 # 2. Configure environment
-cp .env.example .env   # Add your API keys to .env
+cp .env.example .env
 
-# 3. Initialize DB and launch everything
+# 3. Initialize DB and launch
 npx prisma migrate dev --name init && npm run dev:all
+```
+
+### Windows (PowerShell)
+```powershell
+# 1. Clone and install
+git clone https://github.com/ManiDeep1822/OmniLLM.git
+cd OmniLLM; npm install; cd dashboard-ui; npm install; cd ..
+
+# 2. Configure environment
+Copy-Item .env.example .env
+
+# 3. Initialize DB and launch
+npx prisma migrate dev --name init; npm run dev:all
 ```
 
 > Starts the MCP server on port `3000` and the dashboard on port `5173` simultaneously.
@@ -124,15 +138,23 @@ Fastest way to get up and running:
    ```
 
 2. **Install all dependencies**:
+   **Linux / macOS:**
    ```bash
-   npm install
-   cd dashboard-ui && npm install && cd ..
+   npm install && cd dashboard-ui && npm install && cd ..
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   npm install; cd dashboard-ui; npm install; cd ..
    ```
 
 3. **Configure Environment**:
+   **Linux / macOS:**
    ```bash
    cp .env.example .env
-   # Edit .env and add your API keys
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   Copy-Item .env.example .env
    ```
 
 4. **Initialize Database**:
@@ -223,7 +245,7 @@ npm run dev
 | :--- | :--- |
 | **Tools not showing in IDE** | Ensure `dist/server.js` path in `mcp_config.json` uses forward slashes `/`. |
 | **`Failed to parse stream`** | Your Google API Key has expired. Get a new one from [AI Studio](https://aistudio.google.com/). |
-| **Port 3000 already in use** | Run `netstat -ano \| findstr :3000` and kill the process ID. |
+| **Port 3000 already in use** | **Windows:** `netstat -ano \| findstr :3000` <br> **Linux/macOS:** `lsof -i :3000` |
 | **`EPERM` during migration** | Close any process using the database file (including the dashboard). |
 | **Dashboard shows no live data** | Ensure `npm run dev:all` is running; the dashboard relies on the Socket.IO server. |
 
