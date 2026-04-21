@@ -115,9 +115,15 @@ Experience real-time token streaming and automated context chaining directly in 
 
 Fastest way to get up and running:
 
-1. **Install & Setup**: `npm install && npx prisma migrate dev --name init`
-2. **Environment**: `cp .env.example .env` (Add your API keys)
-3. **Launch All**: `npm run dev:all`
+**Linux / macOS:**
+```bash
+npm install && npx prisma migrate dev --name init && cp .env.example .env && npm run dev:all
+```
+
+**Windows (PowerShell):**
+```powershell
+npm install; npx prisma migrate dev --name init; Copy-Item .env.example .env; npm run dev:all
+```
 
 ---
 
