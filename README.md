@@ -19,7 +19,7 @@
 
 **OmniLLM** is a production-grade [Model Context Protocol](https://modelcontextprotocol.io/) server that connects the Google Antigravity IDE (and any MCP-compatible client) to elite LLM providers including Anthropic Claude, OpenAI GPT-4o, and Google Gemini.
 
-It features a robust multi-model routing system, persistent context chaining via SQLite, and a high-fidelity glassmorphic dashboard with live token streaming and custom-tuned ergonomics.
+It features a robust multi-model routing system with **Gemma 4 27B** as the default high-performance engine for Google Gemini tasks, persistent context chaining via SQLite, and a high-fidelity glassmorphic dashboard with live token streaming and custom-tuned ergonomics.
 
 > [!TIP]
 > **Working with Agents?** Check out [AGENTS.md](AGENTS.md) for optimized operation patterns and model selection strategies for autonomous agents like Antigravity.
@@ -188,6 +188,7 @@ Update your `mcp_config.json` (located at `C:\Users\<you>\.gemini\antigravity\mc
       "args": ["C:/absolute/path/to/OmniLLM/dist/server.js"],
       "env": {
         "GEMINI_API_KEY": "YOUR_KEY_HERE",
+        "GEMINI_MODEL": "gemma-4-27b-it",
         "CLAUDE_API_KEY": "YOUR_KEY_HERE",
         "OPENAI_API_KEY": "YOUR_KEY_HERE",
         "DATABASE_URL": "file:./prisma/dev.db"

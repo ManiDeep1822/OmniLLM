@@ -7,6 +7,7 @@ const envSchema = z.object({
   CLAUDE_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemma-4-27b-it'),
   PORT: z.string().default('3000'),
   DASHBOARD_PORT: z.string().default('5173'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -15,10 +16,10 @@ const envSchema = z.object({
 export const config = envSchema.parse(process.env);
 
 export const GEMINI_MODELS = [
+  config.GEMINI_MODEL,
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
   'gemini-2.0-flash',
-  'gemini-2.0-flash-lite'
+  'gemini-1.5-flash'
 ];
 
 
