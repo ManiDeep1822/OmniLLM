@@ -26,18 +26,26 @@ import { OpenAIProvider } from './openai.js';
 import { GeminiProvider } from './gemini.js';
 import { config } from '../config.js';
 
+export function getAvailableProviders(): string[] {
+  const available: string[] = [];
+  if (config.GEMINI_API_KEY?.trim()) available.push('gemini');
+  if (config.CLAUDE_API_KEY?.trim()) available.push('claude');
+  if (config.OPENAI_API_KEY?.trim()) available.push('openai');
+  return available;
+}
+
 export class ProviderRegistry {
   private providers: Map<string, LLMProvider> = new Map();
 
   constructor() {
-    if (config.CLAUDE_API_KEY) {
-      this.providers.set('anthropic', new ClaudeProvider());
+    if (config.CLAUDE_API_KEY?.trim()) {
+      this.providers.set('claude', new ClaudeProvider());
     }
-    if (config.OPENAI_API_KEY) {
+    if (config.OPENAI_API_KEY?.trim()) {
       this.providers.set('openai', new OpenAIProvider());
     }
-    if (config.GEMINI_API_KEY) {
-      this.providers.set('google', new GeminiProvider());
+    if (config.GEMINI_API_KEY?.trim()) {
+      this.providers.set('gemini', new GeminiProvider());
     }
   }
 
@@ -46,7 +54,11 @@ export class ProviderRegistry {
   }
 
   getProvider(name: string): LLMProvider {
-    const provider = this.providers.get(name.toLowerCase());
+    let normalizedName = name.toLowerCase();
+    if (normalizedName === 'google' || normalizedName === 'google gemini') normalizedName = 'gemini';
+    if (normalizedName === 'anthropic' || normalizedName === 'anthropic claude') normalizedName = 'claude';
+    
+    const provider = this.providers.get(normalizedName);
     if (!provider) {
       const available = this.getAvailableProviders().join(', ');
       throw new Error(`Provider ${name} is not available (Missing API Key). Available: [${available}]`);

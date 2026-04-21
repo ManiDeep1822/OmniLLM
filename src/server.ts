@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { tools } from './tools/index.js';
 import { initSocket, getIO } from './dashboard/socket.js';
 import { getHistory, prisma } from './db/logger.js';
+import { getAvailableProviders } from './providers/index.js';
 import { writeFileSync } from 'fs';
 
 const mcpServer = new McpServer({
@@ -158,8 +159,10 @@ app.get('/api/providers/health', async (req, res) => {
         ? Math.round(lastCalls.reduce((acc, c) => acc + (c.latencyMs || 0), 0) / lastCalls.length)
         : 0;
 
-      let status = 'healthy';
-      if (lastCalls.length > 0) {
+      const isConfigured = !!(config[(`${p.toUpperCase()}_API_KEY` as keyof typeof config)] as string)?.trim();
+
+      let status = isConfigured ? 'healthy' : 'unconfigured';
+      if (isConfigured && lastCalls.length > 0) {
         if (successCount < 7) status = 'unhealthy';
         else if (successCount < 9 || avgLatency > 5000) status = 'degraded';
       }
@@ -178,6 +181,18 @@ app.get('/api/providers/health', async (req, res) => {
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
+});
+
+app.get('/api/providers/available', (req, res) => {
+  const available = getAvailableProviders();
+  res.json({
+    available,
+    configured: {
+      gemini: !!config.GEMINI_API_KEY?.trim(),
+      claude: !!config.CLAUDE_API_KEY?.trim(),
+      openai: !!config.OPENAI_API_KEY?.trim()
+    }
+  });
 });
 
 app.get('/api/analytics', async (req, res) => {

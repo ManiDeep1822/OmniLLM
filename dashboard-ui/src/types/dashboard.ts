@@ -29,7 +29,7 @@ export interface DashboardStats {
 export interface ProviderStatus {
   id: string;
   name: string;
-  status: 'healthy' | 'unhealthy' | 'degraded';
+  status: 'healthy' | 'unhealthy' | 'degraded' | 'unconfigured';
   latency: number;
   uptime: number;
   history: number[];

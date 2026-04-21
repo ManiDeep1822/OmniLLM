@@ -7,6 +7,7 @@ import type { ProviderStatus } from '../types/dashboard';
 const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
   if (status === 'healthy') return <CheckCircle2 size={14} className="text-emerald-500" />;
   if (status === 'degraded') return <AlertTriangle size={14} className="text-amber-500" />;
+  if (status === 'unconfigured') return <XCircle size={14} className="text-slate-500" />;
   return <XCircle size={14} className="text-red-500" />;
 };
 
@@ -59,17 +60,22 @@ export const ProviderHealth: React.FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.08 }}
-              className="relative rounded-xl p-4 bg-[var(--input-bg)] border border-[var(--border-color)] hover:border-primary/30 transition-all"
+              className={`relative rounded-xl p-4 bg-[var(--input-bg)] border border-[var(--border-color)] hover:border-primary/30 transition-all ${p.status === 'unconfigured' ? 'opacity-70' : ''}`}
             >
               {/* Top gradient bar */}
-              <div className={`absolute top-0 left-0 right-0 h-0.5 rounded-t-xl bg-gradient-to-r ${providerColors[p.name] || 'from-gray-400 to-gray-500'}`} />
+              <div className={`absolute top-0 left-0 right-0 h-0.5 rounded-t-xl bg-gradient-to-r ${p.status === 'unconfigured' ? 'from-slate-500 to-slate-700' : (providerColors[p.name] || 'from-gray-400 to-gray-500')}`} />
 
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[13px] font-semibold text-[var(--text-primary)]">{p.name}</span>
-                <StatusIcon status={p.status} />
+                <div className="flex items-center gap-2">
+                  {p.status === 'unconfigured' && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400 font-medium uppercase tracking-wider">No API Key</span>
+                  )}
+                  <StatusIcon status={p.status} />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid grid-cols-2 gap-3 ${p.status === 'unconfigured' ? 'grayscale opacity-50' : ''}`}>
                 <div>
                   <p className="label text-[10px] mb-0.5">Latency</p>
                   <div className="flex items-center gap-1">
