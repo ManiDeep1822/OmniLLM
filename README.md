@@ -66,8 +66,9 @@ npx prisma migrate dev --name init; npm run dev:all
 | 🚦 **Auto-Router** | Dynamically selects the best model based on task complexity |
 | ⛓️ **Context Chaining** | Persistent multi-turn memory backed by SQLite |
 | 📊 **Premium Dashboard** | Glassmorphic Vite/React UI with custom-tuned scrollbars and real-time feeds |
-| 🤖 **Multi-Step Chains** | Sequential reasoning with automated context passing |
+| 🤖 **Multi-Step Chains** | Executes sequential prompts with **incremental result streaming** and progress tracking |
 | ⚖️ **Model Comparison** | Benchmarks responses from all three providers simultaneously |
+| 🛡️ **MCP Stability** | Connection-alive pings and optimized timeouts for long-running tasks |
 | 💰 **Cost Tracking** | Per-request token counting and cost estimation |
 | 🏥 **Provider Health** | Real-time latency and uptime monitoring per provider |
 
@@ -254,6 +255,17 @@ npm run dev
 | **Port 3000 already in use** | **Windows:** `netstat -ano \| findstr :3000` <br> **Linux/macOS:** `lsof -i :3000` |
 | **`EPERM` during migration** | Close any process using the database file (including the dashboard). |
 | **Dashboard shows no live data** | Ensure `npm run dev:all` is running; the dashboard relies on the Socket.IO server. |
+| **`EOF` Connection Drop** | Fixed in v1.1.0+ via progress pings and increased server timeouts (300s). |
+
+---
+
+## ⚡ Stability & Reliability
+
+OmniLLM is engineered for long-running autonomous workflows. To prevent connection drops during complex reasoning chains:
+- **Progress Pings**: The server emits heartbeat events during multi-step operations to maintain the connection.
+- **Incremental Streaming**: The `multi-step-chain` tool now streams results step-by-step rather than waiting for completion.
+- **Protocol Isolation**: All logging is routed to `STDERR` to keep `STDOUT` reserved for clean JSON-RPC communication.
+- **Extended Timeouts**: HTTP and keep-alive timeouts are set to 5 minutes by default.
 
 ---
 
