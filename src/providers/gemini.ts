@@ -54,8 +54,14 @@ export class GeminiProvider implements LLMProvider {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       
+      const parts = response.candidates?.[0]?.content?.parts || [];
+      const textContent = parts
+        .filter((p: any) => !p.thought)
+        .map((p: any) => p.text || '')
+        .join('');
+      
       return {
-        content: response.text(),
+        content: textContent || response.text(),
         usage: {
           promptTokens: response.usageMetadata?.promptTokenCount || 0,
           completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
@@ -74,10 +80,14 @@ export class GeminiProvider implements LLMProvider {
       const result = await model.generateContentStream(prompt);
 
       for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        if (chunkText) {
-          handler({ text: chunkText, isFinished: false });
-
+        // Skip thought/reasoning chunks from Gemma 4
+        const parts = chunk.candidates?.[0]?.content?.parts || [];
+        for (const part of parts) {
+          if ((part as any).thought === true) continue; // Skip thinking tokens
+          const chunkText = part.text || '';
+          if (chunkText) {
+            handler({ text: chunkText, isFinished: false });
+          }
         }
       }
 
