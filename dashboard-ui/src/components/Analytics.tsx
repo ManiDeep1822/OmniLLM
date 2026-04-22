@@ -4,6 +4,8 @@ import { PieChart as PieIcon, BarChart3 } from 'lucide-react';
 import axios from 'axios';
 import type { AnalyticsData } from '../types/dashboard';
 
+import { getApiUrl } from '../utils/api-client';
+
 export const Analytics: React.FC = () => {
   const [range, setRange] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [data, setData] = useState<AnalyticsData[]>([]);
@@ -11,7 +13,8 @@ export const Analytics: React.FC = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await axios.get<AnalyticsData[]>(`http://localhost:3000/api/analytics?period=${range}`);
+        const url = await getApiUrl(`/api/analytics?period=${range}`);
+        const res = await axios.get<AnalyticsData[]>(url);
         setData(res.data);
       } catch (err) {
         console.error('Failed to fetch analytics', err);

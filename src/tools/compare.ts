@@ -13,7 +13,7 @@ export const modelComparisonTool = {
     const targets = [
       { name: 'anthropic', key: 'CLAUDE' },
       { name: 'openai', key: 'GPT4O' },
-      { name: 'google', key: 'GEMINI_PRO' }
+      { name: 'google', key: 'GEMINI_FLASH' }
     ].filter(p => availableProviders.includes(p.name));
 
     if (targets.length === 0) {

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { MCPEvent } from '../types/dashboard';
 
+import { findServerPort } from '../utils/api-client';
+
 export const useSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [events, setEvents] = useState<MCPEvent[]>([]);
@@ -9,16 +11,6 @@ export const useSocket = () => {
 
   useEffect(() => {
     let s: Socket | null = null;
-
-    async function findServerPort(): Promise<string> {
-      for (const port of [3000, 3001, 3002, 3003]) {
-        try {
-          const res = await fetch(`http://localhost:${port}/api/health`);
-          if (res.ok) return String(port);
-        } catch {}
-      }
-      return '3000';
-    }
 
     const startSocket = async () => {
       const port = await findServerPort();

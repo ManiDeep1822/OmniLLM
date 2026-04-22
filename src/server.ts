@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
@@ -8,20 +9,31 @@ import { tools } from './tools/index.js';
 import { initSocket, getIO } from './dashboard/socket.js';
 import { getHistory, prisma } from './db/logger.js';
 import { getAvailableProviders } from './providers/index.js';
-import { getActiveModel, setActiveModel, getAvailableModelsGrouped } from './config.js';
-import { writeFileSync } from 'fs';
+import { getActiveModel, setActiveModel } from './config.js';
+import { writeFileSync, existsSync, unlinkSync } from 'fs';
+
+console.error('[v1.1.0] LLM Gateway starting...');
+process.on('uncaughtException', (err) => {
+  console.error('[v1.1.0] CRITICAL: UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[v1.1.0] CRITICAL: UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+try {
+  if (existsSync('.dashboard-port')) unlinkSync('.dashboard-port');
+} catch (e) {
+  // Ignore
+}
+
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT', () => process.exit(0));
 
 const mcpServer = new McpServer({
   name: 'llm-gateway',
   version: '1.0.0',
 });
 
-// Fix 4 - prevent early exit and handle signals
-process.stdin.resume();
-process.stdin.setEncoding('utf8');
-process.on('SIGTERM', () => process.exit(0));
-process.on('SIGINT', () => process.exit(0));
-
+// Register tools
 for (const tool of tools) {
   mcpServer.tool(
     tool.name,
@@ -43,32 +55,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// --- MODEL SWITCHER ENDPOINTS ---
-app.get('/api/models', (req, res) => {
-  console.log('API: GET /api/models hit');
-  res.json({
-    current: getActiveModel(),
-    available: getAvailableModelsGrouped()
-  });
-});
 
-app.post('/api/models/switch', async (req, res) => {
-  console.log('API: POST /api/models/switch hit', req.body);
-  const { provider, model } = req.body;
-  if (!provider || !model) {
-    return res.status(400).json({ error: 'Provider and model are required' });
-  }
-
-  setActiveModel(provider, model);
-  
-  const { emitToDashboard } = await import('./dashboard/socket.js');
-  emitToDashboard('model_switched', { provider, model });
-
-  res.json({ 
-    success: true, 
-    active: getActiveModel() 
-  });
-});
 
 app.get('/api/history', async (req, res) => {
 
@@ -99,59 +86,7 @@ app.post('/api/test-error', async (req, res) => {
     error: 'API Key Expired. Please update your .env file.',
     timestamp: new Date().toISOString()
   });
-  res.json({ status: 'error_emitted' });
-});
-
-app.post('/api/test-stream', async (req, res) => {
-  // Simulate a real-time streaming LLM response
-  const providers = ['Anthropic', 'OpenAI', 'Google'];
-  const provider = providers[Math.floor(Math.random() * providers.length)];
-  const models: Record<string, string> = { 'Anthropic': 'claude-3-5-sonnet', 'OpenAI': 'gpt-4o', 'Google': 'gemini-1.5-pro' };
-  
-  const text = "This is a simulated real-time stream. The Auto-Router has dynamically selected the optimal provider for this request. Neural networks are processing the tokens and returning them through the WebSocket connection to your dashboard. This proves the pipeline is fully operational!";
-  const words = text.split(' ');
-  
-  res.status(200).json({ status: 'streaming_started' });
-  
-  for (let i = 0; i < words.length; i++) {
-    await new Promise(r => setTimeout(r, 60 + Math.random() * 40));
-    const { emitToDashboard } = await import('./dashboard/socket.js');
-    emitToDashboard('token', {
-      provider: provider,
-      model: models[provider],
-      text: words[i] + ' ',
-      timestamp: new Date().toISOString()
-    });
-  }
-  
-  await new Promise(r => setTimeout(r, 100));
-  const { emitToDashboard } = await import('./dashboard/socket.js');
-  
-  emitToDashboard('stream_complete', {
-    provider: provider,
-    model: models[provider],
-    tokenCount: words.length + 5,
-    latencyMs: words.length * 80 + 200,
-    timestamp: new Date().toISOString()
-  });
-
-  // Log mock to DB so it shows up in history too
-  try {
-    const { logCall } = await import('./db/logger.js');
-    await logCall({
-      modelProvider: provider,
-      modelName: models[provider],
-      prompt: "Simulate a live stream",
-      response: text,
-      tokenCount: words.length + 5,
-      costEstimate: 0.0012,
-      latencyMs: words.length * 80 + 200,
-      isStreamed: true,
-      status: 'success'
-    });
-  } catch (e) {
-    console.error("Failed to log mock stream:", e);
-  }
+    res.json({ status: 'error_emitted' });
 });
 
 
@@ -258,6 +193,23 @@ app.get('/api/analytics', async (req, res) => {
   }
 });
 
+app.post('/api/tools/:name', async (req, res) => {
+  const toolName = req.params.name;
+  const tool = tools.find(t => t.name === toolName);
+  
+  if (!tool) {
+    return res.status(404).json({ error: `Tool ${toolName} not found` });
+  }
+
+  try {
+    const result = await tool.handler(req.body);
+    res.json(result);
+  } catch (error: any) {
+    console.error(`Error calling tool ${toolName}:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/health', async (req, res) => {
   try {
     const io = getIO();
@@ -286,30 +238,53 @@ httpServer.keepAliveTimeout = 300000;
 
 initSocket(httpServer);
 
+httpServer.on('error', (err: any) => {
+  console.error('HTTP Server Error:', err);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${err.port} is already in use. Please kill the process using it.`);
+  }
+  process.exit(1);
+});
+
 async function findFreePort(startPort: number): Promise<number> {
   return new Promise((resolve) => {
     const server = createServer();
-    server.listen(startPort, () => {
+    server.listen(startPort, '127.0.0.1', () => {
       const port = (server.address() as any).port;
       server.close(() => resolve(port));
     });
-    server.on('error', () => resolve(findFreePort(startPort + 1)));
+    server.on('error', () => {
+      server.close();
+      resolve(findFreePort(startPort + 1));
+    });
   });
 }
 
 
-const actualPort = 3000;
-writeFileSync('.dashboard-port', String(actualPort));
-console.error(`Dashboard running on port ${actualPort}`);
+const requestedPort = Number(config.PORT) || 3000;
+const actualPort = await findFreePort(requestedPort);
 
-httpServer.listen(actualPort, '0.0.0.0', () => {
-  console.error(`Server listening on port ${actualPort}`);
-  
-  // Always start the MCP transport
-  const transport = new StdioServerTransport();
-  mcpServer.connect(transport).catch(err => {
-    console.error('MCP connection error:', err);
-  });
+write_sync_safe('.dashboard-port', String(actualPort));
+console.error(`[v1.1.0] Gateway API configured on port ${actualPort}`);
+
+function write_sync_safe(path: string, content: string) {
+  try {
+    writeFileSync(path, content);
+  } catch (e) {
+    console.error(`[v1.1.0] Failed to write ${path}:`, e);
+  }
+}
+
+
+
+// Start MCP transport
+const transport = new StdioServerTransport();
+mcpServer.connect(transport).catch(err => {
+  console.error('[v1.1.0] MCP connection error:', err);
+});
+
+httpServer.listen(actualPort, '127.0.0.1', () => {
+  console.error(`[v1.1.0] Gateway API listening on port ${actualPort}`);
 });
 
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { handleStreamingRequest } from '../utils/streaming-helper.js';
 import { getAvailableProviders } from '../providers/index.js';
 
-function selectBestAvailableProvider(taskType: string): string {
+function getProviderSequence(taskType: string): string[] {
   const available = getAvailableProviders();
   
   if (available.length === 0) {
@@ -11,68 +11,84 @@ function selectBestAvailableProvider(taskType: string): string {
 
   // Preferred routing based on task type
   const preferences: Record<string, string[]> = {
-    'coding': ['gemini', 'openai', 'claude'],
-    'reasoning': ['claude', 'openai', 'gemini'],
-    'creative': ['openai', 'claude', 'gemini'],
-    'simple': ['gemini', 'openai', 'claude'],
-    'default': ['gemini', 'openai', 'claude']
+    'coding': ['gemini', 'openai', 'claude', 'mock'],
+    'reasoning': ['claude', 'openai', 'gemini', 'mock'],
+    'creative': ['openai', 'claude', 'gemini', 'mock'],
+    'simple': ['gemini', 'openai', 'claude', 'mock'],
+    'default': ['gemini', 'openai', 'claude', 'mock']
   };
 
   const order = preferences[taskType] || preferences['default'];
   
-  // Pick first preferred provider that is actually available
-  for (const provider of order) {
-    if (available.includes(provider)) {
-      return provider;
-    }
-  }
+  // Create a sequence that starts with preferred providers, then includes all remaining available ones
+  const sequence = [
+    ...order.filter(p => available.includes(p)),
+    ...available.filter(p => !order.includes(p))
+  ];
 
-  // Fallback to first available
-  return available[0];
+  return [...new Set(sequence)]; // Deduplicate and return
 }
 
 export const autoRouterTool = {
   name: 'auto-router',
-  description: 'Automatically selects the best model based on task type and complexity.',
+  description: 'Automatically selects the best model and falls back to others on failure.',
   schema: {
     task: z.string().describe('Description of the task or the final prompt')
   },
   handler: async (args: any) => {
     const task = args.task.toLowerCase();
     
-    try {
-      // Determine task type for routing
-      let taskType = 'default';
-      if (task.includes('code') || task.includes('program') || task.includes('fix')) taskType = 'coding';
-      else if (task.includes('why') || task.includes('explain') || task.includes('reason')) taskType = 'reasoning';
-      else if (task.includes('write') || task.includes('story') || task.includes('create')) taskType = 'creative';
-      else if (task.length < 50) taskType = 'simple';
+    // Determine task type for routing
+    let taskType = 'default';
+    if (task.includes('code') || task.includes('program') || task.includes('fix')) taskType = 'coding';
+    else if (task.includes('why') || task.includes('explain') || task.includes('reason')) taskType = 'reasoning';
+    else if (task.includes('write') || task.includes('story') || task.includes('create')) taskType = 'creative';
+    else if (task.length < 50) taskType = 'simple';
 
-      const provider = selectBestAvailableProvider(taskType);
-      
-      // Map provider to modelKey
-      const modelKeyMap: Record<string, string> = {
-        'claude': 'CLAUDE',
-        'openai': 'GPT4O',
-        'gemini': 'GEMINI_PRO'
-      };
-      
+    const providers = getProviderSequence(taskType);
+    const errors: string[] = [];
+    
+    const modelKeyMap: Record<string, string> = {
+      'claude': 'CLAUDE',
+      'openai': 'GPT4O',
+      'gemini': 'GEMINI_FLASH',
+      'mock': 'MOCK'
+    };
+
+    // Try providers in sequence until one succeeds
+    for (const provider of providers) {
       const modelKey = modelKeyMap[provider];
+      if (!modelKey) continue;
 
-      const response = await handleStreamingRequest(args.task, provider, { modelKey });
+      try {
+        if (errors.length > 0) {
+          console.error(`Attempting fallback to ${provider}...`);
+        }
+        
+        const response = await handleStreamingRequest(args.task, provider, { modelKey });
 
-      return {
-        content: [{ type: 'text', text: `[Routed to ${modelKey}]\n\n${response}` }]
-      };
-    } catch (error: any) {
-      console.error('MCP Tool Error (auto-router):', error.message);
-      return {
-        content: [{ 
-          type: 'text', 
-          text: `Router failed: ${error.message}` 
-        }],
-        isError: true
-      };
+        return {
+          content: [{ 
+            type: 'text', 
+            text: `${errors.length > 0 ? `[Fallback Active: ${errors.length} failed] ` : ''}[Routed to ${modelKey}]\n\n${response}` 
+          }]
+        };
+      } catch (error: any) {
+        const msg = `${provider}: ${error.message}`;
+        console.error(`Router fallback trigger: ${msg}`);
+        errors.push(msg);
+        
+        // Continue to next provider in loop
+      }
     }
+
+    // If we're here, all providers failed
+    return {
+      content: [{ 
+        type: 'text', 
+        text: `Router failed for all attempted providers:\n${errors.join('\n')}` 
+      }],
+      isError: true
+    };
   }
 };

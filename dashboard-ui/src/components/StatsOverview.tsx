@@ -4,13 +4,16 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import type { DashboardStats } from '../types/dashboard';
 
+import { getApiUrl } from '../utils/api-client';
+
 export const StatsOverview: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get<DashboardStats>('http://localhost:3000/api/stats');
+        const url = await getApiUrl('/api/stats');
+        const res = await axios.get<DashboardStats>(url);
         setStats(res.data);
       } catch (err) {
         console.error('Failed to fetch stats', err);

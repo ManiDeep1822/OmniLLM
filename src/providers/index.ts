@@ -24,6 +24,7 @@ export interface LLMProvider {
 import { ClaudeProvider } from './claude.js';
 import { OpenAIProvider } from './openai.js';
 import { GeminiProvider } from './gemini.js';
+import { MockProvider } from './mock.js';
 import { config } from '../config.js';
 
 export function getAvailableProviders(): string[] {
@@ -31,6 +32,7 @@ export function getAvailableProviders(): string[] {
   if (config.GEMINI_API_KEY?.trim()) available.push('gemini');
   if (config.CLAUDE_API_KEY?.trim()) available.push('claude');
   if (config.OPENAI_API_KEY?.trim()) available.push('openai');
+  available.push('mock'); // Simulation always available
   return available;
 }
 
@@ -47,6 +49,7 @@ export class ProviderRegistry {
     if (config.GEMINI_API_KEY?.trim()) {
       this.providers.set('gemini', new GeminiProvider());
     }
+    this.providers.set('mock', new MockProvider());
   }
 
   getAvailableProviders(): string[] {

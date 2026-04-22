@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { LLMProvider, StreamHandler, ProviderResponse } from './index.js';
 import { config, MODELS, GEMINI_MODELS, getActiveModel } from '../config.js';
 
+
 export class GeminiProvider implements LLMProvider {
   name = 'Google Gemini';
   private genAI: GoogleGenerativeAI;
@@ -29,9 +30,11 @@ export class GeminiProvider implements LLMProvider {
       } catch (error: any) {
         lastError = error;
         const is503 = error.message?.includes('503') || error.message?.includes('Service Unavailable');
-        if (is503) {
-          console.error(`Gemini model ${modelId} failed with 503. Retrying with next fallback in 2s...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+        const is404 = error.message?.includes('404') || error.message?.includes('not found');
+        if (is503 || is404) {
+          const reason = is503 ? '503' : '404';
+          console.error(`Gemini model ${modelId} failed with ${reason}. Retrying with next fallback...`);
+          if (is503) await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
         }
         throw error;
@@ -74,6 +77,7 @@ export class GeminiProvider implements LLMProvider {
         const chunkText = chunk.text();
         if (chunkText) {
           handler({ text: chunkText, isFinished: false });
+
         }
       }
 
@@ -88,7 +92,9 @@ export class GeminiProvider implements LLMProvider {
           }
       });
 
+
       handler({ text: '', isFinished: true });
     });
   }
 }
+

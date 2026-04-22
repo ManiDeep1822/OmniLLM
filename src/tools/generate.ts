@@ -7,13 +7,17 @@ export const streamGenerateTool = {
   description: 'Generates an LLM response with real-time streaming to the dashboard.',
   schema: {
     prompt: z.string().describe('The user prompt to generate a response for'),
-    modelProvider: z.enum(['anthropic', 'openai', 'google']).default('anthropic'),
+    modelProvider: z.enum(['anthropic', 'openai', 'google']).default('google'),
     systemPrompt: z.string().optional().describe('Optional system instructions'),
     modelKey: z.string().optional().describe('Optional model key (e.g., CLAUDE, GPT4O, GEMINI_PRO)')
   },
   handler: async (args: any) => {
     const available = getAvailableProviders();
-    if (args.modelProvider && !available.includes(args.modelProvider)) {
+    let provider = args.modelProvider;
+    if (provider === 'google') provider = 'gemini';
+    if (provider === 'anthropic') provider = 'claude';
+
+    if (provider && !available.includes(provider)) {
       return {
         content: [{
           type: 'text',
@@ -24,7 +28,7 @@ export const streamGenerateTool = {
     }
 
     try {
-      const text = await handleStreamingRequest(args.prompt, args.modelProvider, {
+      const text = await handleStreamingRequest(args.prompt, provider, {
         systemPrompt: args.systemPrompt,
         modelKey: args.modelKey
       });
@@ -33,14 +37,26 @@ export const streamGenerateTool = {
         content: [{ type: 'text', text }]
       };
     } catch (error: any) {
-      console.error('MCP Tool Error (stream-generate):', error.message);
-      return {
-        content: [{ 
-          type: 'text', 
-          text: `Error: ${error.message}. Please check gateway logs or configuration.` 
-        }],
-        isError: true
-      };
+      console.error(`stream-generate primary failed (${provider}), falling back to mock...`);
+      try {
+        const text = await handleStreamingRequest(args.prompt, available[0], {
+          modelKey: 'MOCK'
+        });
+        return {
+          content: [{ 
+            type: 'text', 
+            text: `[Fallback Active: ${provider} failed] ${text}` 
+          }]
+        };
+      } catch (mockError: any) {
+        return {
+          content: [{ 
+            type: 'text', 
+            text: `Error: ${error.message}. Simulation fallback also failed.` 
+          }],
+          isError: true
+        };
+      }
     }
   }
 };

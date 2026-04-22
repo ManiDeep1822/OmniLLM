@@ -18,6 +18,8 @@ const providerBadge = (provider: string) => {
   );
 };
 
+import { getApiUrl } from '../utils/api-client';
+
 export const HistoryTable: React.FC = () => {
   const [history, setHistory] = useState<CallRecord[]>([]);
   const [search, setSearch] = useState('');
@@ -25,7 +27,8 @@ export const HistoryTable: React.FC = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get<CallRecord[]>('http://localhost:3000/api/history');
+        const url = await getApiUrl('/api/history');
+        const res = await axios.get<CallRecord[]>(url);
         setHistory(res.data);
       } catch (err) {
         console.error('Failed to fetch history', err);

@@ -18,16 +18,30 @@ export const handleStreamingRequest = async (
 
   console.error(`Starting stream for ${providerName} using ${modelInfo.id}`);
 
+  const providerDisplayMap: Record<string, string> = {
+    'gemini': 'Google',
+    'google': 'Google',
+    'claude': 'Anthropic',
+    'anthropic': 'Anthropic',
+    'openai': 'OpenAI'
+  };
+  const displayProvider = providerDisplayMap[providerName.toLowerCase()] || providerName;
+
   try {
+
     await provider.stream(prompt, (chunk) => {
       if (chunk.text) {
         buffer.addToken(chunk.text);
-        emitToDashboard('token', {
-          provider: providerName,
-          model: modelInfo.id,
-          text: chunk.text,
-          timestamp: new Date().toISOString()
-        });
+        try {
+          emitToDashboard('token', {
+            provider: displayProvider,
+            model: modelInfo.id,
+            text: chunk.text,
+            timestamp: new Date().toISOString()
+          });
+        } catch (e) {
+          // Ignore dashboard emission errors during streaming
+        }
       }
 
       if (chunk.isFinished) {
@@ -40,7 +54,7 @@ export const handleStreamingRequest = async (
         console.error(`Stream complete. Tokens: ${metrics.totalTokens}, Cost: ${metrics.cost}`);
 
         emitToDashboard('stream_complete', {
-          provider: providerName,
+          provider: displayProvider,
           model: modelInfo.id,
           tokenCount: metrics.totalTokens,
           latencyMs: Date.now() - startTime,
@@ -65,7 +79,7 @@ export const handleStreamingRequest = async (
     console.error(`Stream error for ${providerName}:`, error.message);
     
     emitToDashboard('stream_error', {
-      provider: providerName,
+      provider: displayProvider,
       model: modelInfo.id,
       error: error.message,
       timestamp: new Date().toISOString()

@@ -11,7 +11,7 @@ import { HistoryTable } from './components/HistoryTable';
 import { AutoRouterCard } from './components/AutoRouterCard';
 import { ChainVisualizer } from './components/ChainVisualizer';
 import { SettingsPage } from './components/SettingsPage';
-import ModelSwitcher from './components/ModelSwitcher';
+
 import { useSocket } from './hooks/useSocket';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,9 +33,7 @@ function DashboardView({ events, isConnected }: { events: any[]; isConnected: bo
 
       <StatsOverview />
 
-      <div className="my-6">
-        <ModelSwitcher />
-      </div>
+
 
       <div className="grid grid-cols-12 gap-5">
         <div className="col-span-12 xl:col-span-8 h-[480px]">
@@ -81,6 +79,8 @@ function AnalyticsView() {
   );
 }
 
+import { findServerPort } from './utils/api-client';
+
 function AppContent() {
   const { events, isConnected } = useSocket();
   const [health, setHealth] = useState<'healthy' | 'unhealthy' | 'degraded'>('healthy');
@@ -89,7 +89,8 @@ function AppContent() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/health');
+        const port = await findServerPort();
+        const res = await fetch(`http://localhost:${port}/api/health`);
         if (res.ok) {
           const data = await res.json();
           setHealth(data.status);

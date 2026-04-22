@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { getApiUrl } from '../utils/api-client';
+
 import { useTheme } from '../context/useTheme';
 import {
   Server, Database, Zap, Key, Moon, Sun, ExternalLink, RefreshCw,
   CheckCircle2, XCircle, Loader2
 } from 'lucide-react';
 import axios from 'axios';
-import ModelSwitcher from './ModelSwitcher';
+
 
 interface ConfigKey {
 
@@ -23,7 +25,8 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const res = await axios.get<{ keys: ConfigKey[] }>('http://localhost:3000/api/config');
+        const url = await getApiUrl('/api/config');
+        const res = await axios.get<{ keys: ConfigKey[] }>(url);
         setConfigKeys(res.data.keys);
       } catch {
         setConfigKeys([]);
@@ -36,6 +39,7 @@ export const SettingsPage: React.FC = () => {
 
   const configuredKeys = configKeys.filter(k => k.set);
   const missingKeys = configKeys.filter(k => !k.set);
+  const activePort = configKeys.find(k => k.key === 'PORT')?.value || '3000';
 
   return (
     <div className="space-y-8">
@@ -47,10 +51,7 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Real-time Model Switcher */}
-        <div className="xl:col-span-2">
-            <ModelSwitcher />
-        </div>
+
 
 
         {/* Appearance */}
@@ -160,17 +161,18 @@ export const SettingsPage: React.FC = () => {
                 <div>
                   <p className="text-xs font-bold text-slate-300">{ep.label}</p>
                   <p className="text-[10px] font-mono text-slate-500">
-                    localhost:3000<span className="text-primary">{ep.path}</span>
+                    localhost:{activePort}<span className="text-primary">{ep.path}</span>
                   </p>
                 </div>
-                <a
-                  href={`http://localhost:3000${ep.path}`}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={async () => {
+                    const url = await getApiUrl(ep.path);
+                    window.open(url, '_blank');
+                  }}
                   className="p-1.5 text-slate-500 hover:text-primary transition-colors"
                 >
                   <ExternalLink size={14} />
-                </a>
+                </button>
               </div>
             ))}
           </div>
@@ -185,18 +187,19 @@ export const SettingsPage: React.FC = () => {
             <h2 className="text-sm font-black uppercase tracking-tight">Quick Actions</h2>
           </div>
           <div className="space-y-3">
-            <a
-              href="http://localhost:3000/api/health"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full flex items-center gap-3 p-4 rounded-xl bg-slate-950/30 border border-slate-700/30 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+            <button
+              onClick={async () => {
+                const url = await getApiUrl('/api/health');
+                window.open(url, '_blank');
+              }}
+              className="w-full flex items-center gap-3 p-4 rounded-xl bg-slate-950/30 border border-slate-700/30 hover:border-primary/40 hover:bg-primary/5 transition-all group text-left"
             >
               <RefreshCw size={16} className="text-slate-500 group-hover:text-primary transition-colors" />
               <div>
                 <p className="text-xs font-bold text-slate-300">Check Gateway Health</p>
                 <p className="text-[10px] text-slate-500 italic">Opens /api/health in new tab</p>
               </div>
-            </a>
+            </button>
             <a
               href="https://github.com/ManiDeep1822/OmniLLM"
               target="_blank"

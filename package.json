@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "ui:dev": "npm run dev --prefix dashboard-ui",
-    "dev:all": "concurrently \"npm run dev\" \"wait-on http://localhost:3000/api/health && npm run ui:dev\""
+    "dev:all": "npm run build && concurrently \"node dist/server.js\" \"npx wait-on .dashboard-port && npm run ui:dev\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",

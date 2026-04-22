@@ -19,6 +19,8 @@ interface LiveFeedProps {
   isConnected: boolean;
 }
 
+import { getApiUrl } from '../utils/api-client';
+
 export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
   const [sessions, setSessions] = useState<StreamSession[]>([]);
   const [activeModel, setActiveModel] = useState<{provider: string, model: string} | null>(null);
@@ -27,7 +29,8 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
   useEffect(() => {
     const fetchActive = async () => {
       try {
-        const res = await fetch('/api/models');
+        const url = await getApiUrl('/api/models');
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setActiveModel(data.current);
@@ -148,17 +151,6 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
             </div>
           )}
 
-          <button 
-            onClick={async () => {
-              try { await fetch('http://localhost:3000/api/test-stream', { method: 'POST' }); }
-              catch(e) { console.error('Failed to trigger test stream'); }
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-[8px] transition-all"
-            title="Trigger a simulated real-time stream"
-          >
-            <Zap size={14} />
-            <span className="text-[11px] font-semibold">Test Stream</span>
-          </button>
           
           {sessions.length > 0 && (
             <button 
