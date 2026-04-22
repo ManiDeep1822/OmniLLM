@@ -13,28 +13,28 @@ In v1.2.0, the project transitioned to a **headless architecture**, removing all
 
 ### 1. Pure MCP Core (`src/server.ts`)
 - **MCP Stdio Transport**: Optimized standard I/O communication for dedicated use as an IDE tool-provider.
-- **Async Streaming Engine**: A non-blocking streaming pipeline that delivers tokens directly to the client with zero buffering.
+- **Async Streaming Engine**: A non-blocking streaming pipeline that delivers tokens directly to the client with zero buffering. Correctly accumulates usage metadata across streaming chunks for precise cost tracking.
 - **Protocol Isolation**: All system logs are routed to `STDERR`, ensuring `STDOUT` is reserved exclusively for the MCP JSON-RPC protocol.
 
 ### 2. Multi-Provider Integration (`src/providers/`)
-- **Claude (Anthropic)**: Support for `claude-3-5-sonnet-20241022`.
-- **GPT-4o (OpenAI)**: Support for flagship and mini models.
-- **Gemini (Google)**: Optimized for `gemini-1.5-flash` with a sequence-based fallback system through the Gemini family.
-- **Registry Pattern**: A centralized `ProviderRegistry` manages instantiation and ensures that only providers with valid API keys are exposed as tools.
+- **Claude (Anthropic)**: Enhanced to capture input tokens from `message_start` events.
+- **GPT-4o (OpenAI)**: Full usage tracking via `stream_options`.
+- **Gemini (Google)**: Optimized for `gemini-1.5-flash` with a sequence-based fallback system and reliable usage metadata capture.
+- **Registry Pattern**: A centralized `ProviderRegistry` manages instantiation.
 
 ### 3. Persistence Layer (`prisma/`)
-- **SQLite Database**: A lightweight, local database for storing interaction logs, token counts, and cost metrics.
-- **Prisma ORM**: Modern database access layer with a fully typed schema.
+- **SQLite Database**: Stores interaction logs, token counts, and cost metrics. Now includes `sessionId` for strict context isolation.
+- **Prisma ORM**: Modern database access layer with a fully typed schema updated for session tracking.
 
 ---
 
 ## ✨ Core Tools
 
-- **`stream-generate`**: Standard text generation with raw streaming throughput.
-- **`multi-step-chain`**: Sequential reasoning where the context of one step feeds into the next.
-- **`auto-router`**: A complexity-aware router that selects the most efficient model based on the task description.
-- **`model-comparison`**: Parallel execution tool for side-by-side benchmarking of different providers.
-- **`context-chain`**: Persistent conversation memory across sessions using the SQLite backend.
+- **`stream-generate`**: Standard text generation with raw streaming throughput and session tracking.
+- **`multi-step-chain`**: Sequential reasoning with integrated session and chain persistence.
+- **`auto-router`**: A complexity-aware router with automated provider fallback and session isolation.
+- **`model-comparison`**: Parallel execution tool for side-by-side benchmarking.
+- **`context-chain`**: Persistent conversation memory with **strict session isolation**, preventing context leakage between different users.
 
 ---
 

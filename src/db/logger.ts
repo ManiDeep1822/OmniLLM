@@ -14,6 +14,7 @@ export const logCall = async (data: {
   isChained?: boolean;
   status?: string;
   errorMessage?: string;
+  sessionId?: string;
   chainId?: string;
 }) => {
   try {

@@ -11,11 +11,14 @@ export const contextChainTool = {
     modelProvider: z.enum(['anthropic', 'openai', 'google', 'gemini', 'claude']).default('anthropic')
   },
   handler: async (args: any) => {
-    // Get last 5 calls for this session
+    // Get last 5 calls for this session specifically to ensure isolation
     const history = await prisma.lLMCall.findMany({
       take: 5,
       orderBy: { timestamp: 'desc' },
-      where: { status: 'success' }
+      where: { 
+        status: 'success',
+        sessionId: args.sessionId 
+      }
     });
 
     const context = history
@@ -25,7 +28,9 @@ export const contextChainTool = {
 
     const fullPrompt = context ? `Background Context:\n${context}\n\nCurrent Task: ${args.prompt}` : args.prompt;
     
-    const response = await handleStreamingRequest(fullPrompt, args.modelProvider);
+    const response = await handleStreamingRequest(fullPrompt, args.modelProvider, {
+      sessionId: args.sessionId
+    });
 
     return {
       content: [{ type: 'text', text: response }]

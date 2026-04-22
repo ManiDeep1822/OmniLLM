@@ -21,6 +21,7 @@ model LLMCall {
   isChained      Boolean  @default(false)
   status         String   @default("success") // success, error, fallback
   errorMessage   String?
+  sessionId      String?
   chainId        String?
   chain          ChainSession? @relation(fields: [chainId], references: [id])
 }

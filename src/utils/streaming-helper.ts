@@ -11,6 +11,7 @@ export const handleStreamingRequest = async (
   const provider = registry.getProvider(providerName);
   const buffer = new StreamBuffer();
   const startTime = Date.now();
+  let finalUsage: any = null;
   
   // Assign a default modelKey based on the providerName
   let defaultKey = 'CLAUDE';
@@ -29,11 +30,23 @@ export const handleStreamingRequest = async (
         buffer.addToken(chunk.text);
       }
 
+      if (chunk.usage) {
+        finalUsage = {
+          ...finalUsage,
+          ...chunk.usage,
+          // If completionTokens is already set and chunk has 0, keep the higher value
+          // (Sometimes providers send partial usage then full usage)
+          completionTokens: Math.max(finalUsage?.completionTokens || 0, chunk.usage.completionTokens || 0),
+          promptTokens: Math.max(finalUsage?.promptTokens || 0, chunk.usage.promptTokens || 0),
+        };
+      }
+
       if (chunk.isFinished) {
         const metrics = buffer.getMetrics(
           modelInfo.inputCost,
           modelInfo.outputCost,
-          chunk.usage?.promptTokens || 0
+          finalUsage?.promptTokens || 0,
+          finalUsage?.completionTokens
         );
 
         console.error(`Stream complete. Tokens: ${metrics.totalTokens}, Cost: ${metrics.cost}`);
@@ -48,7 +61,9 @@ export const handleStreamingRequest = async (
           costEstimate: metrics.cost,
           latencyMs: Date.now() - startTime,
           isStreamed: true,
-          status: 'success'
+          status: 'success',
+          sessionId: options.sessionId,
+          chainId: options.chainId
         });
       }
     }, options);
@@ -64,7 +79,9 @@ export const handleStreamingRequest = async (
       costEstimate: 0,
       latencyMs: Date.now() - startTime,
       isStreamed: true,
-      status: 'failed'
+      status: 'failed',
+      sessionId: options.sessionId,
+      chainId: options.chainId
     });
 
     throw error;

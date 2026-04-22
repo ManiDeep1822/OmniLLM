@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "llm-gateway": {
+      "command": "node",
+      "args": ["./dist/mcp.js"],
+      "env": {
+        "CLAUDE_API_KEY": "${CLAUDE_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "DATABASE_URL": "file:./dev.db"
+      },
+      "tools": [
+        "stream-generate",
+        "multi-step-chain",
+        "model-comparison",
+        "auto-router",
+        "context-chain"
+      ]
+    }
+  }
+}

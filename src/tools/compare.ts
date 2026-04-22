@@ -6,7 +6,8 @@ export const modelComparisonTool = {
   name: 'model-comparison',
   description: 'Compares responses from Claude, GPT-4o, and Gemini for the same prompt.',
   schema: {
-    prompt: z.string().describe('The prompt to compare across models')
+    prompt: z.string().describe('The prompt to compare across models'),
+    sessionId: z.string().optional().describe('Optional session identifier')
   },
   handler: async (args: any) => {
     const availableProviders = registry.getAvailableProviders();
@@ -21,7 +22,10 @@ export const modelComparisonTool = {
     }
 
     const results = await Promise.allSettled(
-      targets.map(p => handleStreamingRequest(args.prompt, p.name, { modelKey: p.key }))
+      targets.map(p => handleStreamingRequest(args.prompt, p.name, { 
+        modelKey: p.key,
+        sessionId: args.sessionId 
+      }))
     );
 
     const comparison = results.map((res, i) => {

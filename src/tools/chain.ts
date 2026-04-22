@@ -21,7 +21,8 @@ export const multiStepChainTool = {
         const fullPrompt = i === 0 ? stepPrompt : `Context: ${accumulatedContext}\n\nNext Task: ${stepPrompt}`;
         
         const response = await handleStreamingRequest(fullPrompt, args.modelProvider, {
-          chainId: session.id
+          chainId: session.id,
+          sessionId: args.sessionId
         });
 
         results.push(response);

@@ -33,7 +33,8 @@ export const autoRouterTool = {
   name: 'auto-router',
   description: 'Automatically selects the best model and falls back to others on failure.',
   schema: {
-    task: z.string().describe('Description of the task or the final prompt')
+    task: z.string().describe('Description of the task or the final prompt'),
+    sessionId: z.string().optional().describe('Optional session identifier')
   },
   handler: async (args: any) => {
     const task = args.task.toLowerCase();
@@ -64,7 +65,10 @@ export const autoRouterTool = {
           console.error(`Attempting fallback to ${provider}...`);
         }
         
-        const response = await handleStreamingRequest(args.task, provider, { modelKey });
+        const response = await handleStreamingRequest(args.task, provider, { 
+          modelKey,
+          sessionId: args.sessionId 
+        });
 
         return {
           content: [{ 

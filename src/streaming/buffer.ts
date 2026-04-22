@@ -2,7 +2,7 @@ export class StreamBuffer {
   private tokens: string[] = [];
   private startTime: number;
   private firstTokenTime: number | null = null;
-  private totalTokens: number = 0;
+  private chunkCount: number = 0;
 
   constructor() {
     this.startTime = Date.now();
@@ -13,22 +13,26 @@ export class StreamBuffer {
       this.firstTokenTime = Date.now();
     }
     this.tokens.push(text);
-    this.totalTokens++;
+    this.chunkCount++;
   }
 
-  getMetrics(costPerMillionInput: number, costPerMillionOutput: number, inputTokens: number) {
+  getMetrics(costPerMillionInput: number, costPerMillionOutput: number, inputTokens: number, completionTokens?: number) {
     const now = Date.now();
     const totalTime = (now - this.startTime) / 1000;
     const timeToFirstToken = this.firstTokenTime ? (this.firstTokenTime - this.startTime) : 0;
-    const tokensPerSecond = this.totalTokens / totalTime;
+    
+    // Prioritize actual completion tokens from provider, fallback to chunk count (heuristic)
+    const finalCompletionTokens = completionTokens || this.chunkCount;
+    const tokensPerSecond = finalCompletionTokens / (totalTime || 1);
     
     const cost = (inputTokens * costPerMillionInput / 1000000) + 
-                 (this.totalTokens * costPerMillionOutput / 1000000);
+                 (finalCompletionTokens * costPerMillionOutput / 1000000);
 
     return {
       timeToFirstToken,
       tokensPerSecond,
-      totalTokens: this.totalTokens,
+      totalTokens: inputTokens + finalCompletionTokens,
+      completionTokens: finalCompletionTokens,
       totalTime,
       cost
     };

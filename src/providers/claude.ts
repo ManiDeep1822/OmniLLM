@@ -49,7 +49,16 @@ export class ClaudeProvider implements LLMProvider {
     });
 
     for await (const event of stream) {
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      if (event.type === 'message_start') {
+        handler({
+          text: '',
+          isFinished: false,
+          usage: {
+            promptTokens: event.message.usage.input_tokens,
+            completionTokens: 0
+          }
+        });
+      } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
         handler({ text: event.delta.text, isFinished: false });
       } else if (event.type === 'message_delta') {
         // Final usage info
@@ -57,7 +66,7 @@ export class ClaudeProvider implements LLMProvider {
             text: '', 
             isFinished: false, 
             usage: { 
-                promptTokens: 0, // Anthropic doesn't send input tokens in delta usually
+                promptTokens: 0, 
                 completionTokens: event.usage.output_tokens 
             } 
         });

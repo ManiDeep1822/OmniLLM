@@ -9,7 +9,8 @@ export const streamGenerateTool = {
     prompt: z.string().describe('The user prompt to generate a response for'),
     modelProvider: z.enum(['anthropic', 'openai', 'google', 'gemini', 'claude', 'mock']).default('google'),
     systemPrompt: z.string().optional().describe('Optional system instructions'),
-    modelKey: z.string().optional().describe('Optional model key (e.g., CLAUDE, GPT4O, GEMINI_PRO)')
+    modelKey: z.string().optional().describe('Optional model key (e.g., CLAUDE, GPT4O, GEMINI_PRO)'),
+    sessionId: z.string().optional().describe('Optional session identifier')
   },
   handler: async (args: any) => {
     const available = getAvailableProviders();
@@ -20,7 +21,8 @@ export const streamGenerateTool = {
     try {
       const text = await handleStreamingRequest(args.prompt, provider, {
         systemPrompt: args.systemPrompt,
-        modelKey: args.modelKey
+        modelKey: args.modelKey,
+        sessionId: args.sessionId
       });
 
       return {

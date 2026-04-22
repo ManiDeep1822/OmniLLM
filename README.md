@@ -54,11 +54,11 @@ npm run dev
 |---|---|
 | 🚀 **Zero-Overhead Streaming** | Pure token streaming directly to your MCP client without UI latency |
 | 🚦 **Auto-Router** | Dynamically selects the best model based on task complexity |
+| 🛡️ **Session Isolation** | Secure, isolated conversation history per `sessionId` |
 | ⛓️ **Context Chaining** | Persistent multi-turn memory backed by SQLite |
 | 🤖 **Multi-Step Chains** | Executes sequential prompts with incremental result delivery |
 | ⚖️ **Model Comparison** | Benchmarks responses from multiple providers simultaneously |
-| 🛡️ **MCP Stability** | Optimized timeouts and heartbeat pings for long-running agent tasks |
-| 💰 **Logging & Costs** | Local DB logging of all calls for audit and cost estimation |
+| 💰 **Precision Costing** | Deep integration with provider usage metrics for accurate auditing |
 
 ---
 
@@ -116,11 +116,12 @@ Add this to your `mcp_config.json`:
 
 ## 🛠️ Available MCP Tools
 
-- `stream-generate`: Standard text generation with streaming.
-- `auto-router`: Automatically picks the best provider/model for the task.
+- `stream-generate`: Standard text generation with streaming. Supports `sessionId` for logging.
+- `auto-router`: Automatically picks the best provider/model. Supports `sessionId`.
 - `multi-step-chain`: Executes sequential prompts with context passing.
 - `model-comparison`: Benchmarks Claude, GPT-4o, and Gemini in parallel.
-- `context-chain`: Maintains persistent conversation memory.
+- `context-chain`: Maintains persistent, isolated conversation memory using `sessionId`.
+
 
 ---
 
