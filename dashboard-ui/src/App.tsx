@@ -93,11 +93,14 @@ function AppContent() {
         if (res.ok) {
           const data = await res.json();
           setHealth(data.status);
+          console.error('Backend connected:', data);
         } else {
           setHealth('unhealthy');
+          console.error('Backend returned non-ok health status');
         }
-      } catch {
+      } catch (e) {
         setHealth('unhealthy');
+        console.error('Backend not reachable:', e);
       }
     };
     checkHealth();

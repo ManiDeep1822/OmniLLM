@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import type { MCPEvent } from '../types/dashboard';
 
 async function findServerPort(): Promise<string> {
-  for (const port of [4321, 4322, 4323, 4324, 4325]) {
+  for (const port of [4321, 4322, 4323, 4324, 4325, 4326, 4327, 4328, 4329, 4330]) {
     try {
       const res = await fetch(`http://localhost:${port}/api/health`);
       if (res.ok) return String(port);
@@ -48,6 +48,20 @@ export const useSocket = () => {
         setEvents((prev) => [{ ...event, type: 'model_switched' }, ...prev.slice(0, 99)]);
       });
 
+      s.on('chain_start', (event: any) => {
+        console.error('Socket: chain_start', event);
+        setEvents((prev) => [{ ...event, type: 'chain_start' }, ...prev.slice(0, 99)]);
+      });
+
+      s.on('chain_step', (event: any) => {
+        console.error('Socket: chain_step', event);
+        setEvents((prev) => [{ ...event, type: 'chain_step' }, ...prev.slice(0, 99)]);
+      });
+
+      s.on('chain_complete', (event: any) => {
+        console.error('Socket: chain_complete', event);
+        setEvents((prev) => [{ ...event, type: 'chain_complete' }, ...prev.slice(0, 99)]);
+      });
 
       setSocket(s);
     };

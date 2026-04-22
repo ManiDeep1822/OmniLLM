@@ -12,7 +12,7 @@ export const multiStepChainTool = {
     modelProvider: z.enum(['anthropic', 'openai', 'google']).default('anthropic'),
     sessionId: z.string().optional().describe('Optional session identifier')
   },
-  handler: async function* (args: any) {
+  handler: async (args: any) => {
     try {
       const session = await createChainSession(args.sessionId);
       const results: string[] = [];
@@ -42,11 +42,7 @@ export const multiStepChainTool = {
           timestamp: new Date().toISOString()
         });
 
-        yield { 
-          step: i + 1, 
-          result: response, 
-          context: accumulatedContext 
-        };
+
       }
 
       emitToDashboard('chain_complete', {
