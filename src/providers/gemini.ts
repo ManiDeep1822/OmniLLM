@@ -31,10 +31,18 @@ export class GeminiProvider implements LLMProvider {
         lastError = error;
         const is503 = error.message?.includes('503') || error.message?.includes('Service Unavailable');
         const is404 = error.message?.includes('404') || error.message?.includes('not found');
-        if (is503 || is404) {
-          const reason = is503 ? '503' : '404';
+        const is429 = error.message?.includes('429') || error.message?.includes('Quota exceeded') || error.message?.includes('Too Many Requests');
+        const is403 = error.message?.includes('403') || error.message?.includes('Forbidden') || error.message?.includes('leaked');
+        const is400 = error.message?.includes('400') || error.message?.includes('Bad Request') || error.message?.includes('expired') || error.message?.includes('API_KEY_INVALID');
+        
+        if (is503 || is404 || is429 || is403 || is400) {
+          const reason = is503 ? '503' : (is429 ? '429 (Quota)' : (is403 ? '403 (Forbidden)' : (is400 ? '400 (Expired/Invalid)' : '404')));
           console.error(`Gemini model ${modelId} failed with ${reason}. Retrying with next fallback...`);
-          if (is503) await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          if (is503 || is429 || is403 || is400) {
+            const delay = is503 ? 2000 : 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
           continue;
         }
         throw error;

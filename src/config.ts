@@ -9,7 +9,6 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-1.5-flash"),
   PORT: z.string().default("4321"),
-  DASHBOARD_PORT: z.string().default("5173"),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
@@ -18,10 +17,10 @@ const envSchema = z.object({
 export const config = envSchema.parse(process.env);
 
 export const GEMINI_MODELS = [
-  config.GEMINI_MODEL,
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
   "gemini-1.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-pro",
+  config.GEMINI_MODEL,
 ];
 
 export const MODELS = {
@@ -44,16 +43,22 @@ export const MODELS = {
     outputCost: 0.6,
   },
   GEMINI_FLASH: {
-    id: GEMINI_MODELS[0],
+    id: "gemini-1.5-flash",
     provider: "google",
     inputCost: 0.1,
     outputCost: 0.4,
   },
-  MOCK: {
-    id: "simulation-offline",
-    provider: "mock",
-    inputCost: 0.0,
-    outputCost: 0.0,
+  GEMINI_20_FLASH: {
+    id: "gemini-2.0-flash",
+    provider: "google",
+    inputCost: 0.1,
+    outputCost: 0.4,
+  },
+  GEMINI_PRO: {
+    id: "gemini-1.5-pro",
+    provider: "google",
+    inputCost: 3.5,
+    outputCost: 10.5,
   },
 };
 
@@ -62,7 +67,7 @@ export type ModelType = keyof typeof MODELS;
 // Runtime Configuration
 let runtimeConfig = {
   activeProvider: "gemini",
-  activeModel: GEMINI_MODELS[0],
+  activeModel: "gemini-1.5-flash",
 };
 
 export function getActiveModel() {

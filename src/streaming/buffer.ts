@@ -1,5 +1,3 @@
-import { EventType, MetricsData } from './events.js';
-
 export class StreamBuffer {
   private tokens: string[] = [];
   private startTime: number;
@@ -18,7 +16,7 @@ export class StreamBuffer {
     this.totalTokens++;
   }
 
-  getMetrics(costPerMillionInput: number, costPerMillionOutput: number, inputTokens: number): MetricsData {
+  getMetrics(costPerMillionInput: number, costPerMillionOutput: number, inputTokens: number) {
     const now = Date.now();
     const totalTime = (now - this.startTime) / 1000;
     const timeToFirstToken = this.firstTokenTime ? (this.firstTokenTime - this.startTime) : 0;

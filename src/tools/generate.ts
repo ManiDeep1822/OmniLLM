@@ -7,7 +7,7 @@ export const streamGenerateTool = {
   description: 'Generates an LLM response with real-time streaming to the dashboard.',
   schema: {
     prompt: z.string().describe('The user prompt to generate a response for'),
-    modelProvider: z.enum(['anthropic', 'openai', 'google']).default('google'),
+    modelProvider: z.enum(['anthropic', 'openai', 'google', 'gemini', 'claude', 'mock']).default('google'),
     systemPrompt: z.string().optional().describe('Optional system instructions'),
     modelKey: z.string().optional().describe('Optional model key (e.g., CLAUDE, GPT4O, GEMINI_PRO)')
   },
@@ -16,16 +16,6 @@ export const streamGenerateTool = {
     let provider = args.modelProvider;
     if (provider === 'google') provider = 'gemini';
     if (provider === 'anthropic') provider = 'claude';
-
-    if (provider && !available.includes(provider)) {
-      return {
-        content: [{
-          type: 'text',
-          text: `Provider "${args.modelProvider}" is not available. No API key configured. Available providers: ${available.join(', ')}. Please add the API key to your .env file.`
-        }],
-        isError: true
-      };
-    }
 
     try {
       const text = await handleStreamingRequest(args.prompt, provider, {

@@ -11,9 +11,9 @@ export const modelComparisonTool = {
   handler: async (args: any) => {
     const availableProviders = registry.getAvailableProviders();
     const targets = [
-      { name: 'anthropic', key: 'CLAUDE' },
+      { name: 'claude', key: 'CLAUDE' },
       { name: 'openai', key: 'GPT4O' },
-      { name: 'google', key: 'GEMINI_FLASH' }
+      { name: 'gemini', key: 'GEMINI_FLASH' }
     ].filter(p => availableProviders.includes(p.name));
 
     if (targets.length === 0) {

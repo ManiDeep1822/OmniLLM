@@ -14,7 +14,4 @@ This MCP server provides advanced LLM orchestration tools for Antigravity agents
 
 Always pass the **full file context** in your prompts to ensure the gateway has enough information to maintain accurate chains and memory.
 
-## Dashboard Monitoring
 
-Monitor all live streams and debug events at `http://localhost:5173`.
-Dashboard API runs at `http://localhost:4321`.

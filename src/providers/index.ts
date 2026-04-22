@@ -24,7 +24,6 @@ export interface LLMProvider {
 import { ClaudeProvider } from './claude.js';
 import { OpenAIProvider } from './openai.js';
 import { GeminiProvider } from './gemini.js';
-import { MockProvider } from './mock.js';
 import { config } from '../config.js';
 
 export function getAvailableProviders(): string[] {
@@ -32,7 +31,6 @@ export function getAvailableProviders(): string[] {
   if (config.GEMINI_API_KEY?.trim()) available.push('gemini');
   if (config.CLAUDE_API_KEY?.trim()) available.push('claude');
   if (config.OPENAI_API_KEY?.trim()) available.push('openai');
-  available.push('mock'); // Simulation always available
   return available;
 }
 
@@ -49,7 +47,6 @@ export class ProviderRegistry {
     if (config.GEMINI_API_KEY?.trim()) {
       this.providers.set('gemini', new GeminiProvider());
     }
-    this.providers.set('mock', new MockProvider());
   }
 
   getAvailableProviders(): string[] {
@@ -63,6 +60,12 @@ export class ProviderRegistry {
     
     const provider = this.providers.get(normalizedName);
     if (!provider) {
+      const realProviders = Array.from(this.providers.keys()).filter(p => p !== 'mock');
+      if (realProviders.length === 1) {
+        console.error(`Requested provider "${name}" not available. Falling back to the only available provider: "${realProviders[0]}"`);
+        return this.providers.get(realProviders[0])!;
+      }
+
       const available = this.getAvailableProviders().join(', ');
       throw new Error(`Provider ${name} is not available (Missing API Key). Available: [${available}]`);
     }

@@ -1,7 +1,5 @@
 import { registry } from '../providers/index.js';
 import { StreamBuffer } from '../streaming/buffer.js';
-import { emitToDashboard } from '../dashboard/socket.js';
-import { EventType } from '../streaming/events.js';
 import { logCall } from '../db/logger.js';
 import { MODELS } from '../config.js';
 
@@ -9,39 +7,26 @@ export const handleStreamingRequest = async (
   prompt: string, 
   providerName: string, 
   options: any = {}
-) => {
+): Promise<string> => {
   const provider = registry.getProvider(providerName);
   const buffer = new StreamBuffer();
   const startTime = Date.now();
-  const modelKey = options.modelKey || 'CLAUDE';
-  const modelInfo = (MODELS as any)[modelKey] || MODELS.CLAUDE;
+  
+  // Assign a default modelKey based on the providerName
+  let defaultKey = 'CLAUDE';
+  const normProvider = providerName.toLowerCase();
+  if (normProvider === 'gemini' || normProvider === 'google') defaultKey = 'GEMINI_FLASH';
+  else if (normProvider === 'openai') defaultKey = 'GPT4O';
+  
+  const modelKey = options.modelKey || defaultKey;
+  const modelInfo = (MODELS as any)[modelKey] || MODELS[defaultKey as keyof typeof MODELS] || MODELS.CLAUDE;
 
   console.error(`Starting stream for ${providerName} using ${modelInfo.id}`);
 
-  const providerDisplayMap: Record<string, string> = {
-    'gemini': 'Google',
-    'google': 'Google',
-    'claude': 'Anthropic',
-    'anthropic': 'Anthropic',
-    'openai': 'OpenAI'
-  };
-  const displayProvider = providerDisplayMap[providerName.toLowerCase()] || providerName;
-
   try {
-
-    await provider.stream(prompt, (chunk) => {
+    await provider.stream(prompt, async (chunk) => {
       if (chunk.text) {
         buffer.addToken(chunk.text);
-        try {
-          emitToDashboard('token', {
-            provider: displayProvider,
-            model: modelInfo.id,
-            text: chunk.text,
-            timestamp: new Date().toISOString()
-          });
-        } catch (e) {
-          // Ignore dashboard emission errors during streaming
-        }
       }
 
       if (chunk.isFinished) {
@@ -52,14 +37,6 @@ export const handleStreamingRequest = async (
         );
 
         console.error(`Stream complete. Tokens: ${metrics.totalTokens}, Cost: ${metrics.cost}`);
-
-        emitToDashboard('stream_complete', {
-          provider: displayProvider,
-          model: modelInfo.id,
-          tokenCount: metrics.totalTokens,
-          latencyMs: Date.now() - startTime,
-          timestamp: new Date().toISOString()
-        });
 
         // Log to DB
         logCall({
@@ -76,14 +53,7 @@ export const handleStreamingRequest = async (
       }
     }, options);
   } catch (error: any) {
-    console.error(`Stream error for ${providerName}:`, error.message);
-    
-    emitToDashboard('stream_error', {
-      provider: displayProvider,
-      model: modelInfo.id,
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
+    console.error(`Primary provider ${providerName} failed: ${error.message}.`);
 
     logCall({
       modelProvider: providerName,

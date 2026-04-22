@@ -11,11 +11,11 @@ function getProviderSequence(taskType: string): string[] {
 
   // Preferred routing based on task type
   const preferences: Record<string, string[]> = {
-    'coding': ['gemini', 'openai', 'claude', 'mock'],
-    'reasoning': ['claude', 'openai', 'gemini', 'mock'],
-    'creative': ['openai', 'claude', 'gemini', 'mock'],
-    'simple': ['gemini', 'openai', 'claude', 'mock'],
-    'default': ['gemini', 'openai', 'claude', 'mock']
+    'coding': ['gemini', 'openai', 'claude'],
+    'reasoning': ['claude', 'openai', 'gemini'],
+    'creative': ['openai', 'claude', 'gemini'],
+    'simple': ['gemini', 'openai', 'claude'],
+    'default': ['gemini', 'openai', 'claude']
   };
 
   const order = preferences[taskType] || preferences['default'];
@@ -51,8 +51,7 @@ export const autoRouterTool = {
     const modelKeyMap: Record<string, string> = {
       'claude': 'CLAUDE',
       'openai': 'GPT4O',
-      'gemini': 'GEMINI_FLASH',
-      'mock': 'MOCK'
+      'gemini': 'GEMINI_FLASH'
     };
 
     // Try providers in sequence until one succeeds

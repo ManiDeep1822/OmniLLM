@@ -1,29 +1,26 @@
 # OmniLLM Run Guide 🚀
 
-Follow these steps to run the OmniLLM Gateway and Dashboard on your local machine.
+OmniLLM is a headless MCP Gateway. Follow these steps to run the server and connect it to your AI agent.
 
 ## 1. Setup Environment
-Ensure you have your API keys ready in the `.env` file at the root of the project.
+Ensure your API keys are configured in the `.env` file at the root of the project.
 ```bash
 GEMINI_API_KEY=your_key_here
 CLAUDE_API_KEY=your_key_here
 OPENAI_API_KEY=your_key_here
 ```
 
-## 2. Start Everything (Recommended)
-The easiest way to run the backend and the dashboard together is from the root directory:
+## 2. Start the MCP Server
+Run the following command from the root directory:
 ```bash
-npm run dev:all
+npm run dev
 ```
-This will:
-- Launch the **Backend Gateway** (defaulting to port 3000).
-- Launch the **Vite Dashboard** (port 5173).
-- **Auto-Sync**: The dashboard will automatically detect the backend's port, even if it changed due to a conflict.
+This starts the TypeScript server in watch mode using `tsx`. The server will listen for MCP JSON-RPC commands over standard input/output.
 
 ## 3. Connect to an MCP Client (Antigravity/Claude Desktop)
 To use OmniLLM in your IDE or desktop client, add it to your `mcp_config.json`:
 
-**Path**: `C:\Users\<YourUser>\.gemini\antigravity\mcp_config.json`
+**Windows Path**: `C:\Users\<YourUser>\.gemini\antigravity\mcp_config.json`
 
 ```json
 {
@@ -32,31 +29,22 @@ To use OmniLLM in your IDE or desktop client, add it to your `mcp_config.json`:
       "command": "node",
       "args": ["C:/absolute/path/to/OmniLLM/dist/server.js"],
       "env": {
-        "GEMINI_API_KEY": "YOUR_KEY_HERE",
-        "PORT": "3000"
+        "GEMINI_API_KEY": "YOUR_KEY_HERE"
       }
     }
   }
 }
 ```
 
-## 4. Manual / Separate Start
-If you prefer to run them in separate terminal windows:
-
-**Terminal 1 (Backend)**:
+## 4. Production Build
+For production use, it is recommended to build the project first:
 ```bash
 npm run build
-npm run dev
-```
-
-**Terminal 2 (Dashboard)**:
-```bash
-cd dashboard-ui
-npm run dev
+npm start
 ```
 
 ## 📊 Monitoring
-Once running, you can access the dashboard at:
-👉 **[http://localhost:5173](http://localhost:5173)**
-
-You should see logs appearing in real-time as you use tools in your IDE.
+As a headless gateway, OmniLLM logs all activity to `STDERR` to avoid interfering with the MCP protocol. You can monitor these logs in your terminal or check the persistent history in the SQLite database via Prisma:
+```bash
+npx prisma studio
+```

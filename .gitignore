@@ -5,8 +5,10 @@ mcp_config.json
 mcp_server_config.json
 dist/
 node_modules/
-prisma/dev.db
-prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+**/dev.db
+**/dev.db-journal
 dashboard-ui/dist/
 dashboard-ui/node_modules/
 *.key

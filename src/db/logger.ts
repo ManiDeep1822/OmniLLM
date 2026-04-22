@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { StreamEvent, EventType } from '../streaming/events.js';
 
 export const prisma = new PrismaClient();
 
@@ -42,13 +41,5 @@ export const updateChainSession = async (id: string, update: any) => {
       ...update,
       steps: update.steps ? JSON.stringify(update.steps) : undefined
     }
-  });
-};
-
-export const getHistory = async (limit = 50) => {
-  return await prisma.lLMCall.findMany({
-    orderBy: { timestamp: 'desc' },
-    take: limit,
-    include: { chain: true }
   });
 };
