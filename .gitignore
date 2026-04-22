@@ -11,3 +11,5 @@ dashboard-ui/dist/
 dashboard-ui/node_modules/
 *.key
 *secret*
+
+restore-mcp.ps1
