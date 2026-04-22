@@ -18,25 +18,15 @@ export const multiStepChainTool = {
       const results: string[] = [];
       let accumulatedContext = "";
 
+      emitToDashboard('chain_start', {
+        totalSteps: args.prompts.length,
+        timestamp: new Date().toISOString()
+      });
+
       for (let i = 0; i < args.prompts.length; i++) {
         const stepPrompt = args.prompts[i];
         const fullPrompt = i === 0 ? stepPrompt : `Context: ${accumulatedContext}\n\nNext Task: ${stepPrompt}`;
         
-        emitToDashboard('chain_progress', {
-          step: i + 1,
-          total: args.prompts.length,
-          status: 'processing',
-          timestamp: new Date().toISOString()
-        });
-
-        emitToDashboard('chain_step', {
-          type: EventType.CHAIN_STEP,
-          provider: args.modelProvider,
-          model: 'chain',
-          timestamp: new Date().toISOString(),
-          data: { step: i + 1, totalSteps: args.prompts.length, prompt: stepPrompt }
-        });
-
         const response = await handleStreamingRequest(fullPrompt, args.modelProvider, {
           chainId: session.id
         });
@@ -44,12 +34,25 @@ export const multiStepChainTool = {
         results.push(response);
         accumulatedContext += `\nStep ${i + 1}: ${response}\n`;
 
+        emitToDashboard('chain_step', {
+          step: i + 1,
+          total: args.prompts.length,
+          prompt: stepPrompt,
+          response: response,
+          timestamp: new Date().toISOString()
+        });
+
         yield { 
           step: i + 1, 
           result: response, 
           context: accumulatedContext 
         };
       }
+
+      emitToDashboard('chain_complete', {
+        totalSteps: args.prompts.length,
+        timestamp: new Date().toISOString()
+      });
 
       await updateChainSession(session.id, {
         steps: results,

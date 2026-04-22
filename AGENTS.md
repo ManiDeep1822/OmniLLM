@@ -17,4 +17,4 @@ Always pass the **full file context** in your prompts to ensure the gateway has 
 ## Dashboard Monitoring
 
 Monitor all live streams and debug events at `http://localhost:5173`.
-Dashboard API runs at `http://localhost:3000`.
+Dashboard API runs at `http://localhost:4321`.

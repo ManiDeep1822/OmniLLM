@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getApiUrl } from '../utils/api-client';
+
 
 import { useTheme } from '../context/useTheme';
 import {
@@ -25,8 +25,7 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const url = await getApiUrl('/api/config');
-        const res = await axios.get<{ keys: ConfigKey[] }>(url);
+        const res = await axios.get<{ keys: ConfigKey[] }>('/api/config');
         setConfigKeys(res.data.keys);
       } catch {
         setConfigKeys([]);
@@ -39,7 +38,7 @@ export const SettingsPage: React.FC = () => {
 
   const configuredKeys = configKeys.filter(k => k.set);
   const missingKeys = configKeys.filter(k => !k.set);
-  const activePort = configKeys.find(k => k.key === 'PORT')?.value || '3000';
+  const activePort = configKeys.find(k => k.key === 'PORT')?.value || '4321';
 
   return (
     <div className="space-y-8">
@@ -166,8 +165,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <button
                   onClick={async () => {
-                    const url = await getApiUrl(ep.path);
-                    window.open(url, '_blank');
+                    window.open(ep.path, '_blank');
                   }}
                   className="p-1.5 text-slate-500 hover:text-primary transition-colors"
                 >
@@ -189,8 +187,7 @@ export const SettingsPage: React.FC = () => {
           <div className="space-y-3">
             <button
               onClick={async () => {
-                const url = await getApiUrl('/api/health');
-                window.open(url, '_blank');
+                window.open('/api/health', '_blank');
               }}
               className="w-full flex items-center gap-3 p-4 rounded-xl bg-slate-950/30 border border-slate-700/30 hover:border-primary/40 hover:bg-primary/5 transition-all group text-left"
             >

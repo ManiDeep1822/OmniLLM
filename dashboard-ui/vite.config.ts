@@ -8,17 +8,17 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Try to read the dynamically assigned port from the backend
-let backendPort = '3000'
+let backendPort = '4321'
 try {
   const portPath = path.resolve(__dirname, '../.dashboard-port')
   if (fs.existsSync(portPath)) {
     backendPort = fs.readFileSync(portPath, 'utf8').trim()
   }
 } catch (e) {
-  // Fallback to 3000
+  backendPort = '4321'
 }
 
-const target = backendPort && backendPort !== '0' ? `http://127.0.0.1:${backendPort}` : 'http://127.0.0.1:3000'
+const target = backendPort && backendPort !== '0' ? `http://127.0.0.1:${backendPort}` : 'http://127.0.0.1:4321'
 
 // https://vite.dev/config/
 export default defineConfig({

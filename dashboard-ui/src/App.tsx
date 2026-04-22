@@ -46,7 +46,7 @@ function DashboardView({ events, isConnected }: { events: any[]; isConnected: bo
           <ProviderHealth />
         </div>
         <div className="col-span-12">
-          <ChainVisualizer events={events} />
+          <ChainVisualizer />
         </div>
       </div>
     </motion.div>
@@ -79,7 +79,7 @@ function AnalyticsView() {
   );
 }
 
-import { findServerPort } from './utils/api-client';
+
 
 function AppContent() {
   const { events, isConnected } = useSocket();
@@ -89,8 +89,7 @@ function AppContent() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const port = await findServerPort();
-        const res = await fetch(`http://localhost:${port}/api/health`);
+        const res = await fetch('/api/health');
         if (res.ok) {
           const data = await res.json();
           setHealth(data.status);

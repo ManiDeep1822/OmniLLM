@@ -11,7 +11,7 @@ const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
   return <XCircle size={14} className="text-red-500" />;
 };
 
-import { getApiUrl } from '../utils/api-client';
+
 
 export const ProviderHealth: React.FC = () => {
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
@@ -19,8 +19,7 @@ export const ProviderHealth: React.FC = () => {
   useEffect(() => {
     const fetchProviders = async () => {
       try {
-        const url = await getApiUrl('/api/providers/health');
-        const res = await axios.get<ProviderStatus[]>(url);
+        const res = await axios.get<ProviderStatus[]>('/api/providers/health');
         setProviders(res.data);
       } catch (err) {
         console.error('Failed to fetch providers', err);

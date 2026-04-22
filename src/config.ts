@@ -8,7 +8,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-1.5-flash"),
-  PORT: z.string().default("3000"),
+  PORT: z.string().default("4321"),
   DASHBOARD_PORT: z.string().default("5173"),
   NODE_ENV: z
     .enum(["development", "production", "test"])

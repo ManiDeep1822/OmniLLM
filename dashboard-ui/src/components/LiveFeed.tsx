@@ -19,7 +19,7 @@ interface LiveFeedProps {
   isConnected: boolean;
 }
 
-import { getApiUrl } from '../utils/api-client';
+
 
 export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
   const [sessions, setSessions] = useState<StreamSession[]>([]);
@@ -29,8 +29,7 @@ export const LiveFeed: React.FC<LiveFeedProps> = ({ events, isConnected }) => {
   useEffect(() => {
     const fetchActive = async () => {
       try {
-        const url = await getApiUrl('/api/models');
-        const res = await fetch(url);
+        const res = await fetch('/api/models');
         if (res.ok) {
           const data = await res.json();
           setActiveModel(data.current);
