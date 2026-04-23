@@ -7,7 +7,7 @@ export const multiStepChainTool = {
   description: 'Executes a sequence of prompts where each output becomes context for the next.',
   schema: {
     prompts: z.array(z.string()).describe('An array of sequential prompts'),
-    modelProvider: z.enum(['anthropic', 'openai', 'google', 'gemini', 'claude', 'mock']).default('anthropic'),
+    modelProvider: z.enum(['anthropic', 'openai', 'google', 'gemini', 'claude']).default('anthropic'),
     sessionId: z.string().optional().describe('Optional session identifier')
   },
   handler: async (args: any) => {

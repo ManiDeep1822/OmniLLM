@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-5.x-2D3748?logo=prisma)](https://www.prisma.io/)
 
-**A high-performance, headless MCP Gateway connecting AI agents to Claude, GPT-4o, and Gemini — optimized for speed and reliability.**
+**The high-performance, headless MCP Gateway powered by Gemma 4 31B — bridging AI agents to the world's most powerful LLMs.**
 
 </div>
 
@@ -15,12 +15,18 @@
 
 ## 🎯 Overview
 
-**OmniLLM** is a production-grade [Model Context Protocol](https://modelcontextprotocol.io/) server that connects autonomous agents (like Google Antigravity) to elite LLM providers. 
+**OmniLLM** is a specialized [Model Context Protocol](https://modelcontextprotocol.io/) server designed for autonomous agents (like Google Antigravity). It provides a unified, high-speed interface for **Gemma 4**, **Claude 3.5 Sonnet**, and **GPT-4o**.
 
-Following a major optimization, OmniLLM is now a **headless gateway**. All dashboard overhead and real-time UI emissions have been removed to ensure zero-latency token throughput and maximum reliability for agentic workflows.
+By transitioning to a **headless architecture**, OmniLLM achieves near-zero latency by removing UI-related overhead and Socket.IO dependencies, making it the ideal choice for production-grade agentic environments.
 
 > [!IMPORTANT]
-> **Dashboard Removed**: This server no longer runs a UI. It is designed to be used as a background service by MCP clients.
+> **Headless Operation**: This server operates exclusively as a tool provider. There is no graphical dashboard, ensuring maximum resources are dedicated to token throughput.
+
+---
+
+## 💎 Flagship Model: Gemma 4 31B
+
+OmniLLM is optimized for the **Gemma 4** family. It currently targets **`gemma-4-31b-it`** as its primary engine for the Google Gemini provider, offering state-of-the-art reasoning and instruction-following capabilities directly via MCP tools.
 
 ---
 
@@ -34,78 +40,37 @@ npm install
 ```
 
 ### 2. Configuration
-Create a `.env` file from the example:
+Create a `.env` file:
 ```bash
 cp .env.example .env
 ```
-Add your `GEMINI_API_KEY`, `CLAUDE_API_KEY`, or `OPENAI_API_KEY`.
+Add your API keys:
+- `GEMINI_API_KEY` (Required for Gemma 4)
+- `CLAUDE_API_KEY`
+- `OPENAI_API_KEY`
 
 ### 3. Database & Launch
 ```bash
+npx prisma generate
 npx prisma migrate dev --name init
 npm run dev
 ```
 
 ---
 
-## 🌟 Features
+## 🔧 MCP Integration (Antigravity / Claude Desktop)
 
-| Feature | Description |
-|---|---|
-| 🚀 **Zero-Overhead Streaming** | Pure token streaming directly to your MCP client without UI latency |
-| 🚦 **Auto-Router** | Dynamically selects the best model based on task complexity |
-| 🛡️ **Session Isolation** | Secure, isolated conversation history per `sessionId` |
-| ⛓️ **Context Chaining** | Persistent multi-turn memory backed by SQLite |
-| 🤖 **Multi-Step Chains** | Executes sequential prompts with incremental result delivery |
-| ⚖️ **Model Comparison** | Benchmarks responses from multiple providers simultaneously |
-| 💰 **Precision Costing** | Deep integration with provider usage metrics for accurate auditing |
-
----
-
-## 🏗️ Architecture
-
-```mermaid
-graph TD
-    subgraph Client
-        IDE[Autonomous Agent / IDE]
-    end
-
-    subgraph "OmniLLM Gateway (Headless)"
-        Server[Express Server]
-        MCP[MCP SDK Transport]
-        DB[(Prisma/SQLite)]
-    end
-
-    subgraph "AI Providers"
-        Claude[Anthropic Claude]
-        GPT[OpenAI GPT-4o]
-        Gemini[Google Gemini]
-    end
-
-    IDE <==>|MCP Stdio| MCP
-    MCP <--> Server
-    Server <--> DB
-    Server <--> Claude
-    Server <--> GPT
-    Server <--> Gemini
-```
-
----
-
-## 🔧 Antigravity / MCP Configuration
-
-Add this to your `mcp_config.json`:
+To use OmniLLM in your agentic environment, update your configuration file (e.g., `mcp_config.json`):
 
 ```json
 {
   "mcpServers": {
     "llm-gateway": {
       "command": "node",
-      "args": ["C:/absolute/path/to/OmniLLM/dist/server.js"],
+      "args": ["C:/Users/YOUR_USER/OneDrive/Desktop/MCP/dist/server.js"],
       "env": {
-        "GEMINI_API_KEY": "YOUR_KEY_HERE",
-        "CLAUDE_API_KEY": "YOUR_KEY_HERE",
-        "OPENAI_API_KEY": "YOUR_KEY_HERE"
+        "GEMINI_API_KEY": "YOUR_GOOGLE_API_KEY",
+        "PORT": "4324"
       }
     }
   }
@@ -116,23 +81,28 @@ Add this to your `mcp_config.json`:
 
 ## 🛠️ Available MCP Tools
 
-- `stream-generate`: Standard text generation with streaming. Supports `sessionId` for logging.
-- `auto-router`: Automatically picks the best provider/model. Supports `sessionId`.
-- `multi-step-chain`: Executes sequential prompts with context passing.
-- `model-comparison`: Benchmarks Claude, GPT-4o, and Gemini in parallel.
-- `context-chain`: Maintains persistent, isolated conversation memory using `sessionId`.
-
+| Tool | Capability |
+| :--- | :--- |
+| `stream-generate` | Real-time streaming output from **Gemma 4**, Claude, or OpenAI. |
+| `auto-router` | Automatically routes tasks to the most efficient model based on complexity. |
+| `multi-step-chain` | Executes complex, sequential prompts where each step informs the next. |
+| `model-comparison` | Run a single prompt across all configured providers to compare quality. |
+| `context-chain` | Persistent conversation memory system backed by a local SQLite database. |
 
 ---
 
-## 🛡️ Troubleshooting
+## 🏗️ Architecture
 
-| Issue | Solution |
-| :--- | :--- |
-| **Tools not showing** | Ensure `dist/server.js` path in config uses forward slashes `/`. |
-| **Fallback to Simulation** | *Removed in v1.2.0*. You will now see real errors if API keys are missing. |
-| **`Failed to parse stream`** | Check your API key and model quota in AI Studio / Anthropic Console. |
-| **`EOF` Connection Drop** | Ensure you are running the latest v1.2.0+ which has optimized heartbeat pings. |
+OmniLLM uses a dual-interface approach:
+- **Stdio (Primary)**: High-speed binary/text channel for MCP tool communication.
+- **HTTP/JSON (Secondary)**: Lightweight health and configuration API on port **4324**.
+
+---
+
+## 🛡️ Health & Monitoring
+
+You can monitor the gateway status at:
+`http://localhost:4324/api/health`
 
 ---
 

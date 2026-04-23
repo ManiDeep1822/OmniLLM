@@ -7,8 +7,8 @@ const envSchema = z.object({
   CLAUDE_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default("gemini-1.5-flash"),
-  PORT: z.string().default("4321"),
+  GEMINI_MODEL: z.string().default("gemma-4-31b-it"),
+  PORT: z.string().default("4324"),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
@@ -17,10 +17,8 @@ const envSchema = z.object({
 export const config = envSchema.parse(process.env);
 
 export const GEMINI_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-pro",
-  config.GEMINI_MODEL,
+  "gemma-4-31b-it",
+  "gemma-4-26b-a4b-it",
 ];
 
 export const MODELS = {
@@ -43,7 +41,7 @@ export const MODELS = {
     outputCost: 0.6,
   },
   GEMINI_FLASH: {
-    id: "gemini-1.5-flash",
+    id: "gemma-4-31b-it",
     provider: "google",
     inputCost: 0.1,
     outputCost: 0.4,
@@ -67,7 +65,7 @@ export type ModelType = keyof typeof MODELS;
 // Runtime Configuration
 let runtimeConfig = {
   activeProvider: "gemini",
-  activeModel: "gemini-1.5-flash",
+  activeModel: "gemma-4-31b-it",
 };
 
 export function getActiveModel() {

@@ -13,40 +13,39 @@ In v1.2.0, the project transitioned to a **headless architecture**, removing all
 
 ### 1. Pure MCP Core (`src/server.ts`)
 - **MCP Stdio Transport**: Optimized standard I/O communication for dedicated use as an IDE tool-provider.
-- **Async Streaming Engine**: A non-blocking streaming pipeline that delivers tokens directly to the client with zero buffering. Correctly accumulates usage metadata across streaming chunks for precise cost tracking.
+- **Async Streaming Engine**: A non-blocking streaming pipeline that delivers tokens directly to the client with zero buffering.
 - **Protocol Isolation**: All system logs are routed to `STDERR`, ensuring `STDOUT` is reserved exclusively for the MCP JSON-RPC protocol.
 
 ### 2. Multi-Provider Integration (`src/providers/`)
-- **Claude (Anthropic)**: Enhanced to capture input tokens from `message_start` events.
+- **Claude (Anthropic)**: Optimized for Claude 3.5 Sonnet.
 - **GPT-4o (OpenAI)**: Full usage tracking via `stream_options`.
-- **Gemini (Google)**: Optimized for `gemini-1.5-flash` with a sequence-based fallback system and reliable usage metadata capture.
-- **Registry Pattern**: A centralized `ProviderRegistry` manages instantiation.
+- **Gemini (Google)**: Specialized for **Gemma 4** (`gemma-4-31b-it`) with a direct, zero-simulation provider logic.
+- **Registry Pattern**: A centralized `ProviderRegistry` manages instantiation and health checks.
 
 ### 3. Persistence Layer (`prisma/`)
-- **SQLite Database**: Stores interaction logs, token counts, and cost metrics. Now includes `sessionId` for strict context isolation.
-- **Prisma ORM**: Modern database access layer with a fully typed schema updated for session tracking.
+- **SQLite Database**: Stores interaction logs, token counts, and cost metrics.
+- **Prisma ORM**: Modern database access layer with session tracking and context management.
 
 ---
 
 ## ✨ Core Tools
 
-- **`stream-generate`**: Standard text generation with raw streaming throughput and session tracking.
-- **`multi-step-chain`**: Sequential reasoning with integrated session and chain persistence.
-- **`auto-router`**: A complexity-aware router with automated provider fallback and session isolation.
+- **`stream-generate`**: Standard text generation with raw streaming throughput.
+- **`multi-step-chain`**: Sequential reasoning with incremental result delivery.
+- **`auto-router`**: A complexity-aware router that selects the best model for the task.
 - **`model-comparison`**: Parallel execution tool for side-by-side benchmarking.
-- **`context-chain`**: Persistent conversation memory with **strict session isolation**, preventing context leakage between different users.
+- **`context-chain`**: Persistent conversation memory with isolated sessions.
 
 ---
 
 ## 🛠️ Infrastructure & Quality Assurance
 - **ESM Modernization**: Built using **Pure ESM** for maximum performance.
-- **Type Safety**: Full TypeScript integration with `NodeNext` resolution.
-- **Headless Performance**: Removed Socket.IO and UI emission overhead, resulting in significantly lower latency and reduced memory footprint.
+- **Headless Performance**: Removed Socket.IO and UI emission overhead.
+- **Health Monitoring**: Lightweight HTTP API on port **4324** for status checks.
 
 ## 📁 Key File Map
-- `/src/server.ts`: The main entry point.
-- `/src/config.ts`: Model IDs, costs, and environment configuration.
+- `/src/server.ts`: The main entry point and MCP/HTTP server.
+- `/src/config.ts`: Centralized model IDs and provider settings.
 - `/src/providers/`: Individual LLM SDK implementations.
-- `/src/tools/`: The logic for individual MCP tools.
-- `/.env`: Secure API key storage.
-- `/prisma/schema.prisma`: Database definition.
+- `/src/tools/`: MCP tool logic and handlers.
+- `/prisma/schema.prisma`: SQLite database schema.
