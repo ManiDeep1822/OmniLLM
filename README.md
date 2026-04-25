@@ -145,6 +145,9 @@ Add the following to your MCP configuration file (`mcp_config.json`):
     }
   }
 }
+
+> [!TIP]
+> **API Keys**: You only need to include the API key(s) for the specific model(s) you plan to use! For example, if you are only using Gemma 4, you can safely remove the `CLAUDE_API_KEY` and `OPENAI_API_KEY` fields from your config.
 ```
 
 ---
