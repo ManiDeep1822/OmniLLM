@@ -76,7 +76,7 @@ app.post('/api/tools/:name', async (req, res) => {
     const result = await tool.handler(req.body);
     res.json(result);
   } catch (error: any) {
-    console.error(`Error calling tool ${toolName}:`, error);
+    console.error('Error calling tool %s:', toolName, error);
     res.status(500).json({ error: error.message });
   }
 });
